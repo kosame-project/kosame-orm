@@ -1,0 +1,59 @@
+{
+  "name": "kosame",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "A Drizzle-based ORM with a model-driven approach.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20",
+    "bun": ">=1.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "zod": "^4.5.4"
+  },
+  "peerDependencies": {
+    "@libsql/client": "^0.18.0",
+    "better-sqlite3": "^13.0.3",
+    "mysql2": "^3.24.3",
+    "pg": "^8.23.0"
+  },
+  "peerDependenciesMeta": {
+    "@libsql/client": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@libsql/client": "^0.18.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-kit": "^0.31.10",
+    "mysql2": "^3.24.3",
+    "pg": "^8.23.0",
+    "typescript": "^7.0.2"
+  }
+}
