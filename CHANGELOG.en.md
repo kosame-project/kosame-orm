@@ -14,5 +14,8 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Created `tsconfig.json` (ESM/NodeNext resolution, strict, `verbatimModuleSyntax`, etc.)
   - Added `src/index.ts` (placeholder) and `.gitignore`
   - Verified `bun install` and `tsc --noEmit` both succeed
+- **Phase 2 Step 1. Model foundation** (see `src/model/CHANGELOG.en.md` for details)
+  - Implemented the non-exported Symbol brand that blocks direct `new` on `Model`, constructor-injected `#context` storage, and the `static table` placeholder
+  - Added `@types/bun` and `"types": ["bun"]` in `tsconfig.json` so `bun:test` types resolve under `tsc --noEmit` too
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

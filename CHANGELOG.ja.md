@@ -14,5 +14,8 @@
   - `tsconfig.json` を作成（ESM/NodeNext解決、strict、`verbatimModuleSyntax` 等）
   - `src/index.ts`（プレースホルダ）、`.gitignore` を追加
   - `bun install` / `tsc --noEmit` が正常に通ることを確認
+- **Phase 2 Step 1. Model基盤**（詳細は `src/model/CHANGELOG.ja.md` 参照）
+  - 非公開Symbolブランドによる`Model`直接`new`禁止、コンストラクタ注入による`#context`保持、`static table`プレースホルダを実装
+  - `@types/bun`を追加し、`bun:test`の型が`tsc --noEmit`でも解決できるように`tsconfig.json`に`"types": ["bun"]`を追加
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
