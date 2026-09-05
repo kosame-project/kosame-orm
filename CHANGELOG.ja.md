@@ -17,5 +17,8 @@
 - **Phase 2 Step 1. Model基盤**（詳細は `src/model/CHANGELOG.ja.md` 参照）
   - 非公開Symbolブランドによる`Model`直接`new`禁止、コンストラクタ注入による`#context`保持、`static table`プレースホルダを実装
   - `@types/bun`を追加し、`bun:test`の型が`tsc --noEmit`でも解決できるように`tsconfig.json`に`"types": ["bun"]`を追加
+- **Phase 2 Step 2. コンテキスト（DbContext相当）**（詳細は `src/context/CHANGELOG.ja.md` 参照）
+  - `createContext(db, schema)`ファクトリを実装。schemaをiterateして`context.users`/`context.posts`等の入り口を起動時に組み立てる（Proxy不使用）
+  - drizzleの`db`/`tx`ハンドルは、Model基盤の`INTERNAL`ブランドと同じ非公開Symbol方式で内部保持
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

@@ -17,5 +17,8 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
 - **Phase 2 Step 1. Model foundation** (see `src/model/CHANGELOG.en.md` for details)
   - Implemented the non-exported Symbol brand that blocks direct `new` on `Model`, constructor-injected `#context` storage, and the `static table` placeholder
   - Added `@types/bun` and `"types": ["bun"]` in `tsconfig.json` so `bun:test` types resolve under `tsc --noEmit` too
+- **Phase 2 Step 2. Context (DbContext equivalent)** (see `src/context/CHANGELOG.en.md` for details)
+  - Implemented the `createContext(db, schema)` factory: iterates `schema` to assemble `context.users`/`context.posts` entry points at construction time (no `Proxy`)
+  - The drizzle `db`/`tx` handle is stored internally using the same non-exported Symbol technique as the Model foundation's `INTERNAL` brand
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
