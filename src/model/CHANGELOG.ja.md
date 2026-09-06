@@ -46,3 +46,11 @@
   - 引数なし（`beforeCreate()`と同様、削除対象のカラム値は`this`からすでに読める）。関連レコードの存在チェック等は`this.raw`で自前クエリを書く想定
   - 例外を投げると`delete()`自体がDELETEを実行しない
   - これでPhase 3（hooks実装）の3ステップ（INSERT/UPDATE/DELETE）が揃った
+
+- **Phase 5. 継承・Mixin機構**
+  - `Constructor<T>`型（`mixin.ts`）を追加: `abstract new (...args: any[]) => T`。`Model`自体が`abstract class`なので、通常のmixinパターンで使われる`new (...args) => T`ではなく`abstract new`にする必要があった
+  - 独自のmixin機構・登録DSLは実装していない。決定事項通り、`function SoftDeletable<TBase extends Constructor<Model>>(Base: TBase) { ... }`という素のTypeScript/JSのmixin関数パターンが、`Model`のブランドSymbol・`#context`配線とそのまま噛み合う（`Model`は薄いクラスで、コンストラクタも素通しでよいため）ことをテストで確認するに留めた
+  - `Constructor<Model>`を受け取るmixin関数は、返すクラスを`abstract class extends Base {...}`として宣言する必要がある（TypeScriptの制約: 抽象コンストラクタシグネチャを持つ型変数を継承するmixinクラスは自身も`abstract`でなければならない）。最終的にユーザーが書く具象クラス（`class Post extends SoftDeletable(Model) {}`）自体は`abstract`にする必要はない
+  - 単体テスト（`mixin.test.ts`）: 2段のmixin合成を通してもブランドガードが例外を投げること、各mixinが追加したメンバーが最終的なプロトタイプに乗ること
+  - `src/index.ts`から`Constructor`型を追加エクスポート（Phase 6の`SoftDeletable`や、ユーザー自身が書くmixinのため）
+  - 実際のmixin（`SoftDeletable`等）はPhase 6で実装する（決定事項「Phase2・Phase6との接続点」参照）

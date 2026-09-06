@@ -48,5 +48,8 @@
   - `Context`に`afterCommit(callback)`/`afterRollback(callback)`を実装。コミット成功後・ロールバック後にそれぞれ登録順で呼び出す
   - ネストしたトランザクションでは、内側の`afterCommit`は内側のSAVEPOINTがreleaseされた時点で発火する（外側の最終的なコミットは待たない）という初期スコープ向けのローカルなセマンティクスを採用
   - これでPhase 4（トランザクション）の2ステップが完了
+- **Phase 5. 継承・Mixin機構**（詳細は `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
+  - `Constructor<T>`型（`abstract new (...args) => T`）を追加。独自のmixin機構は実装せず、素のTypeScript/JSのmixin関数パターンが`Model`のブランドSymbol・`#context`配線とそのまま噛み合うことをテストで確認
+  - 実際のmixin（`SoftDeletable`等）はPhase 6で実装予定
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

@@ -86,3 +86,10 @@
   - コールバック自体が例外を投げた場合はそこで打ち切り、その例外が`transaction()`の戻り値のPromiseを reject する（コミット/ロールバック自体は成功しているが、後処理コールバックの失敗が呼び出し側に伝播する）
   - ネストしたトランザクションでは、内側の`txContext.afterCommit()`は内側のSAVEPOINTがreleaseされた時点で発火する（外側のコミットを待たない）。これは「初期スコープ向けに割り切ったローカルなセマンティクス」であり、内側がreleaseされた後に外側全体がロールバックされた場合でも内側の`afterCommit`はすでに発火済みになる、という既知の制限として単体テストのコメントに明記した（ネストしたSAVEPOINTのrelease自体が外側のロールバックで巻き戻る、というdrizzle/DB側の一般的な挙動とは別の話）
 - 単体テスト（`transaction.test.ts`に追加）: コールバックの実行順序、コミット時のみ`afterCommit`が・ロールバック時のみ`afterRollback`が発火すること、ネストしたトランザクションでの発火タイミング、コールバック自体が例外を投げた場合に`transaction()`がその例外でrejectすることを確認
+
+## Phase 5. 継承・Mixin機構
+
+### Added
+
+- 単体テスト（`mixin.test.ts`）: `class Post extends WithGreeting(WithTag(Model)) {}`のような2段のmixin合成を、実際に`context.posts.add()`/`find()`/`update()`/`delete()`のパイプライン全体を通して検証。各mixinが追加したプロパティ・メソッドがインスタンスに乗ること、`beforeCreate()`のoverride（`super.beforeCreate()`呼び出し込み）が動くこと、`Model`本体のCRUDインスタンスメソッドが壊れないことを確認
+- 実装本体（`Constructor<T>`型）は`src/model/CHANGELOG.ja.md`参照。`src/context`側での追加コードはなし（既存の`Model`・`ModelCollection`がmixinを意識せず動くことの確認のみ）

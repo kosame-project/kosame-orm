@@ -48,5 +48,8 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Implemented `Context.afterCommit(callback)`/`afterRollback(callback)`, called in registration order after a successful commit or after a rollback, respectively
   - For nested transactions, an inner `afterCommit` fires as soon as its own SAVEPOINT releases (it does not wait for the outermost commit) — a deliberate, simple, local semantics for the initial scope
   - This completes both Phase 4 (transactions) steps
+- **Phase 5. Inheritance / mixin mechanism** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Added the `Constructor<T>` type (`abstract new (...args) => T`). No custom mixin machinery was built — plain TypeScript/JS mixin functions already compose cleanly with `Model`'s brand `Symbol` and `#context` wiring, verified with tests
+  - The actual mixins (`SoftDeletable`, etc.) are planned for Phase 6
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
