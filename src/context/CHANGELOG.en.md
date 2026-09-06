@@ -29,3 +29,15 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
   - `ModelClass` (`src/context/types.ts`) gained `readonly table: TTable` so `ModelCollection` can reach `static table` in a type-safe way
 - The `DB` Symbol `Context` holds moved into `src/query` (new directory, see its Step 3 entry). `src/context/internal.ts` was removed, and `Context` now `implements ModelContext` (the interface from `src/model`)
 - Extended `context.test.ts` to run against a real SQLite DB via `bun:sqlite` (`drizzle-orm/bun-sqlite`), covering `add()`/`find()` together with `Model`'s `save()`/`update()`/`delete()`/`reload()`
+
+## Phase 2 Step 4. Wiring associations/hydration into `find()`'s `include`
+
+### Added
+
+- Implemented `ModelCollection.find(pkValue, { include })` (`src/context/collection.ts`). For each key in `include`, it looks up the Model class's `static relations` (`hasMany`/`belongsTo` descriptors from `src/associations`) and calls `loadRelation` (`src/associations`) to attach the relation onto the fetched instance
+  - Passing an unknown relation key in `include` throws
+  - `include` is `readonly string[]` (runtime-checked only) — there's no compile-time check that a relation key actually exists on the Model's type; documented as a known limitation for now
+- `ModelClass` is now primarily owned by `src/associations`'s consumers, so its definition moved to `src/model` (see `src/model/CHANGELOG.en.md`). `src/context/types.ts` just re-exports it
+- Unit tests (`include.test.ts`): verifies `hasMany`/`belongsTo` defined via `static relations` are correctly hydrated through `find()`'s `include`, that the relation property is left untouched when `include` isn't passed, and that an unknown relation name throws
+
+**Known limitation**: `include` cannot nest (per the "1段階まで" decision in `docs/Requirements.md`). Since `context.users.find()` only ever returns a single row, batch hydration across multiple parent rows is only exercised directly at the `loadRelation` level (`src/associations/load.test.ts`) — there is no context-level, multi-row query method (`findMany`, etc.) yet.

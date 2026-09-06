@@ -25,5 +25,10 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Implemented `Model`'s instance methods `save()` / `update()` / `delete()` / `reload()`
   - Implemented `context.users.find()` / `context.users.add()` (using drizzle's inferred `InferInsertModel` type for `add()`'s argument)
   - Switched test-only SQLite usage to `bun:sqlite` (`drizzle-orm/bun-sqlite`) after `bun test` crashed on `better-sqlite3` on this machine
+- **Phase 2 Step 4. Associations / hydration** (see `src/associations/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` / `src/query/CHANGELOG.en.md` for details)
+  - Implemented `hasMany`/`belongsTo` in a new `src/associations` directory. Defined on a Model class via `static relations = {...}`
+  - Relations are resolved with a single batched `IN (...)` query per relation plus app-side hydration (group-by on the parent key) — no JOINs
+  - Added an `include` option to `find()` (`context.users.find(pk, { include: ["posts"] })`) to fetch associations
+  - Nesting stops at one level (as decided). Real PostgreSQL/MySQL verification is deferred to Phase 9, same as Step 3
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

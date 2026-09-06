@@ -25,5 +25,10 @@
   - `Model`のインスタンスメソッド`save()`/`update()`/`delete()`/`reload()`を実装
   - `context.users.find()`/`context.users.add()`を実装（drizzleの推論型`InferInsertModel`を`add()`の引数型として採用）
   - `bun test`が本機の`better-sqlite3`でクラッシュするため、テストは`bun:sqlite`（`drizzle-orm/bun-sqlite`）に切り替えて実施
+- **Phase 2 Step 4. アソシエーション・hydration**（詳細は `src/associations/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` / `src/query/CHANGELOG.ja.md` 参照）
+  - `hasMany`/`belongsTo`を新規ディレクトリ`src/associations`に実装。Modelクラスに`static relations = {...}`で定義する
+  - リレーションはJOINを使わず、親/子キーをまとめた`IN`句のバッチクエリ1本＋アプリ側hydration（親キーでのgroupBy）で解決する方式に統一
+  - `context.users.find(pk, { include: ["posts"] })`のように、`find()`に`include`オプションを追加してアソシエーションを取得できるようにした
+  - ネストは1段階まで（決定事項通り）。PostgreSQL/MySQLでの実DB検証はStep 3と同様、Phase 9まで保留
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

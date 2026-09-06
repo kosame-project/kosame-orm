@@ -1,11 +1,7 @@
-import type { Table } from "drizzle-orm";
-import type { Model, ModelConstructorArgs } from "../model/index.js";
+import type { ModelClass } from "../model/index.js";
 import type { ModelCollection } from "./collection.js";
 
-export interface ModelClass<T extends Model = Model, TTable extends Table = Table> {
-  new (args: ModelConstructorArgs): T;
-  readonly table: TTable;
-}
+export type { ModelClass } from "../model/index.js";
 
 export type ContextSchema = Record<string, ModelClass>;
 

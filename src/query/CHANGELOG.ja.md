@@ -15,3 +15,10 @@
 - 単体テスト（`crud.test.ts`）: `bun:sqlite` + `drizzle-orm/bun-sqlite`を使い、実際のSQLite上でinsert/select/update/deleteの往復を確認（`better-sqlite3`は本機のBunでテスト実行時にクラッシュするため、テストでは不使用。ライブラリ側の依存としては引き続き`better-sqlite3`を維持）
 
 **未検証（Phase 9で解消予定）**: MySQLの`$returningId()`経由の分岐は型チェックのみ通過しており、実際のMySQLサーバーに対しては未検証。PostgreSQL/MySQLの実DBに対するテストはPhase 9（テスト環境構築）でカバーする。
+
+## Phase 2 Step 4. アソシエーション・hydration向けの追加
+
+### Added
+
+- `getColumn(table, key)`（`columns.ts`）: `getTableColumns`からキー名（JSプロパティ名）でカラムを1つ取り出す。見つからなければ例外
+- `selectWhereIn(db, table, column, values)`（`crud.ts`）: 指定カラムに対する`IN`句のバッチSELECT。アソシエーションの子/親をまとめて取得するために`src/associations`から利用する。`values`が空配列の場合はクエリを発行せず空配列を返す

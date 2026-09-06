@@ -22,3 +22,7 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - All four require a primary key (throw if `src/query`'s `getPrimaryKey` can't find one)
   - `ModelConstructorArgs.context` changed from `unknown` to `ModelContext` (`readonly [DB]: unknown`, `DB` being the non-exported Symbol from `src/query`), so instance methods can reach the drizzle `db`/`tx` handle through the context reference
   - `src/index.ts` now also exports the `ModelContext` type
+
+- **Phase 2 Step 4. Relocated `ModelClass` for associations**
+  - Moved `ModelClass<T, TTable>` (the constructor shape plus `static table`'s type) here (`model.ts`) from `src/context/types.ts`, since `src/associations` needs "Model class + its table type" without going through `src/context` (which itself now depends on `src/associations`) — relocating avoids that dependency becoming a cycle
+  - `src/context/types.ts` now just re-exports `ModelClass`; the public API (`src/index.ts`) is unaffected

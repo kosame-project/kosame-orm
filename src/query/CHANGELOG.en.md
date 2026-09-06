@@ -15,3 +15,10 @@ Change history for the `src/query` directory. Follows the [Keep a Changelog](htt
 - Unit tests (`crud.test.ts`): round-trip insert/select/update/delete against real SQLite using `bun:sqlite` + `drizzle-orm/bun-sqlite` (`better-sqlite3` crashes `bun test` on this machine, so it's not used in tests; it remains the library's own SQLite dependency)
 
 **Not yet verified (Phase 9 will cover this)**: the MySQL `$returningId()` branch only type-checks — it hasn't been exercised against a real MySQL server. PostgreSQL/MySQL coverage against real databases is deferred to Phase 9 (test environment).
+
+## Phase 2 Step 4. Additions for associations/hydration
+
+### Added
+
+- `getColumn(table, key)` (`columns.ts`): pulls a single column out of `getTableColumns` by its JS property key, throwing if it's not found
+- `selectWhereIn(db, table, column, values)` (`crud.ts`): a batch `IN (...)` SELECT on one column, used by `src/associations` to fetch a relation's children/parent for a whole set of rows in one query. Returns `[]` without querying when `values` is empty

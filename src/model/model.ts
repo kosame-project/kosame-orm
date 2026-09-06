@@ -13,6 +13,11 @@ export interface ModelConstructorArgs {
   context: ModelContext;
 }
 
+export interface ModelClass<T extends Model = Model, TTable extends Table = Table> {
+  new (args: ModelConstructorArgs): T;
+  readonly table: TTable;
+}
+
 export abstract class Model {
   declare static readonly table: Table;
 

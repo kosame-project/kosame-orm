@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import type { Table } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import type { Column, Table } from "drizzle-orm";
 import { getPrimaryKey, type PrimaryKey } from "./primary-key.js";
 
 export async function insertRow(
@@ -68,4 +68,16 @@ export async function deleteByPrimaryKey(
   pkValue: unknown,
 ): Promise<void> {
   await db.delete(table).where(eq(primaryKey.column, pkValue));
+}
+
+export async function selectWhereIn(
+  db: any,
+  table: Table,
+  column: Column,
+  values: readonly unknown[],
+): Promise<Record<string, unknown>[]> {
+  if (values.length === 0) {
+    return [];
+  }
+  return db.select().from(table).where(inArray(column, values));
 }

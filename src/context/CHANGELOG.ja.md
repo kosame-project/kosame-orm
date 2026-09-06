@@ -29,3 +29,15 @@
   - `ModelClass`（`src/context/types.ts`）に`readonly table: TTable`を追加し、`ModelCollection`から`static table`を型安全に参照できるようにした
 - `Context`が保持する`DB`Symbolは`src/query`（新設、Step 3参照）に移設。`src/context/internal.ts`は削除し、`Context`クラスは新たに`ModelContext`（`src/model`側の型）を`implements`するようにした
 - 単体テスト（`context.test.ts`）を`bun:sqlite`（`drizzle-orm/bun-sqlite`）を使った実DB経由のテストに拡張。`add()`/`find()`、および`Model`側の`save()`/`update()`/`delete()`/`reload()`との組み合わせ動作を確認
+
+## Phase 2 Step 4. アソシエーション・hydrationの統合（`find()`の`include`）
+
+### Added
+
+- `ModelCollection.find(pkValue, { include })`（`src/context/collection.ts`）を実装。`include`に渡したキーごとに、Modelクラスの`static relations`（`src/associations`の`hasMany`/`belongsTo`）を参照して`loadRelation`（`src/associations`）を呼び出し、取得したインスタンスに関連を差し込む
+  - 未知のrelationキーを`include`に渡すと例外を投げる
+  - `include`は`readonly string[]`（実行時チェックのみ）。relationキー名をModelクラスの型から推論してコンパイル時にチェックする仕組みは今回は入れていない（既知の制限として明記）
+- `ModelClass`は`src/associations`が主体で使うようになったため、実体を`src/model`に移設（`src/model/CHANGELOG.ja.md`参照）。`src/context/types.ts`は再エクスポートのみ
+- 単体テスト（`include.test.ts`）: `static relations`で定義した`hasMany`/`belongsTo`が`find()`の`include`経由で正しくhydrateされること、`include`を渡さない場合は該当プロパティに触れないこと、未知のrelation名で例外になることを確認
+
+**既知の制限**: `include`はネスト不可（Requirements.mdの決定事項通り1段階まで）。`context.users.find()`は単一行なので、複数行に対するバッチhydration自体は`src/associations/load.test.ts`（`loadRelation`の直接テスト）でのみ検証しており、コンテキスト経由のAPIとしては複数行を返す汎用クエリメソッド（`findMany`等）自体がまだ存在しない。
