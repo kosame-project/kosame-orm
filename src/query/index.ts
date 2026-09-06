@@ -10,3 +10,4 @@ export {
   deleteByPrimaryKey,
   selectWhereIn,
 } from "./crud.js";
+export { isSyncDatabase, runTransaction } from "./transaction.js";
