@@ -34,10 +34,29 @@ export class Context<TSchema extends ContextSchema = ContextSchema> implements M
   }
 
   async transaction<R>(callback: (txContext: Context<TSchema> & ContextEntries<TSchema>) => Promise<R>): Promise<R> {
-    return runTransaction(this[DB], this.#txDepth, async (tx) => {
-      const txContext = new Context(tx, this.#schema, this.#txDepth + 1) as Context<TSchema> & ContextEntries<TSchema>;
-      return callback(txContext);
-    });
+    let txContext: (Context<TSchema> & ContextEntries<TSchema>) | undefined;
+
+    let result: R;
+    try {
+      result = await runTransaction(this[DB], this.#txDepth, async (tx) => {
+        txContext = new Context(tx, this.#schema, this.#txDepth + 1) as Context<TSchema> & ContextEntries<TSchema>;
+        return callback(txContext);
+      });
+    } catch (error) {
+      if (txContext) {
+        await runCallbacks(txContext.#afterRollbackCallbacks);
+      }
+      throw error;
+    }
+
+    await runCallbacks(txContext!.#afterCommitCallbacks);
+    return result;
+  }
+}
+
+async function runCallbacks(callbacks: readonly TransactionCallback[]): Promise<void> {
+  for (const callback of callbacks) {
+    await callback();
   }
 }
 
