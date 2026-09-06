@@ -36,6 +36,10 @@ export abstract class Model {
     return this.#context;
   }
 
+  protected get raw(): unknown {
+    return this.#context[DB];
+  }
+
   #table(): Table {
     return (this.constructor as typeof Model).table;
   }
