@@ -91,6 +91,7 @@ export abstract class Model {
 
   async delete(): Promise<void> {
     const primaryKey = this.#requirePrimaryKey("delete");
+    await this.beforeDelete();
     await deleteByPrimaryKey(this.#context[DB], this.#table(), primaryKey, this.#primaryKeyValue(primaryKey));
   }
 
