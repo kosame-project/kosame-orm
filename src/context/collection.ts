@@ -57,7 +57,15 @@ export class ModelCollection<T extends Model, TTable extends Table = Table> {
   }
 
   async add(values: InferInsertModel<TTable>): Promise<T> {
-    const row = await insertRow(this.#context[DB], this.#modelClass.table, values as Record<string, unknown>);
-    return this.#hydrate(row);
+    const instance = new this.#modelClass({ brand: INTERNAL, context: this.#context });
+    Object.assign(instance, values);
+
+    await instance.beforeCreate();
+
+    const currentValues = { ...(instance as unknown as Record<string, unknown>) };
+    const row = await insertRow(this.#context[DB], this.#modelClass.table, currentValues);
+    Object.assign(instance, row);
+
+    return instance;
   }
 }
