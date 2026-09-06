@@ -74,6 +74,7 @@ export abstract class Model {
 
   async update(changes: Record<string, unknown>): Promise<void> {
     const primaryKey = this.#requirePrimaryKey("update");
+    await this.beforeUpdate(changes);
     await updateByPrimaryKey(
       this.#context[DB],
       this.#table(),
