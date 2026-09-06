@@ -58,6 +58,8 @@ export abstract class Model {
 
   async beforeCreate(): Promise<void> {}
 
+  async beforeUpdate(_changes: Record<string, unknown>): Promise<void> {}
+
   async save(): Promise<void> {
     const table = this.#table();
     const primaryKey = this.#requirePrimaryKey("save");
