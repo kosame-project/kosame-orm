@@ -86,3 +86,10 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
   - If a callback itself throws, the remaining callbacks in that list are skipped and the error rejects `transaction()`'s own promise (the commit/rollback itself already succeeded — only the post-processing callback failed, and that failure propagates to the caller)
   - For nested transactions, an inner `txContext.afterCommit()` fires as soon as that inner SAVEPOINT releases — it does not wait for the outermost transaction to actually commit. This is a deliberate, simple, local semantics for the initial scope; documented as a known limitation directly in the tests, since it means an inner `afterCommit` can already have fired even if the outer transaction later rolls back (separate from the fact that the SAVEPOINT's own data changes do get undone by the outer rollback — the DB-level rollback and the JS-level callback firing are two different things here)
 - Unit tests (added to `transaction.test.ts`): callback ordering, `afterCommit` firing only on commit and `afterRollback` only on rollback, the nested-transaction firing timing described above, and a callback that itself throws surfacing through `transaction()`'s rejection
+
+## Phase 5. Inheritance / mixin mechanism
+
+### Added
+
+- Unit tests (`mixin.test.ts`): a two-layer mixin chain (`class Post extends WithGreeting(WithTag(Model)) {}`) exercised through the full pipeline — `context.posts.add()`/`find()`/`update()`/`delete()`. Verifies each mixin's added properties/methods land on the instance, a `beforeCreate()` override (calling `super.beforeCreate()`) works, and `Model`'s own CRUD instance methods keep working
+- The actual implementation (the `Constructor<T>` type) is covered in `src/model/CHANGELOG.en.md`; nothing changed on the `src/context` side itself — this just confirms the existing `Model`/`ModelCollection` code already works with mixins without modification

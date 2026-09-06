@@ -46,3 +46,11 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Takes no arguments (same reasoning as `beforeCreate()` — the row's column values are already readable via `this`); checking for related records etc. is expected to go through `this.raw` with a hand-written query
   - Throwing stops `delete()` from running the DELETE
   - This completes all three Phase 3 (hooks) steps — INSERT, UPDATE, DELETE
+
+- **Phase 5. Inheritance / mixin mechanism**
+  - Added the `Constructor<T>` type (`mixin.ts`): `abstract new (...args: any[]) => T`. Since `Model` itself is an `abstract class`, the usual mixin-pattern type (`new (...args) => T`) wasn't enough — needed `abstract new` instead
+  - No custom mixin machinery or registration DSL was built. Per the decision, plain TypeScript/JS mixin functions (`function SoftDeletable<TBase extends Constructor<Model>>(Base: TBase) { ... }`) already compose cleanly with `Model`'s brand `Symbol` and `#context` wiring on their own, since `Model` is thin and its constructor just passes through — this was verified with tests rather than built as new infrastructure
+  - A mixin function accepting `Constructor<Model>` has to return a class declared `abstract class extends Base {...}` (a TypeScript constraint: a mixin class extending a type variable with an abstract construct signature must itself be `abstract`). The concrete class a user eventually writes (`class Post extends SoftDeletable(Model) {}`) doesn't need to be abstract itself
+  - Unit tests (`mixin.test.ts`): the brand guard still throws through a two-layer mixin chain, and members added by each mixin land on the final prototype
+  - `Constructor` is now also exported from `src/index.ts` (for Phase 6's `SoftDeletable` and for users writing their own mixins)
+  - The actual mixins (`SoftDeletable`, etc.) are Phase 6's job (see the "Phase2・Phase6との接続点" decision)
