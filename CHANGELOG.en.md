@@ -34,5 +34,8 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Added `beforeCreate()` to `Model` (no-op by default, overridable). Called before `context.<collection>.add()`'s INSERT; throwing aborts the insert
   - Added `protected get raw()` to `Model` so hook overrides can reach the raw drizzle handle (a preview of Phase 7's `context.raw`)
   - Phase 3 is being split into three steps — INSERT/UPDATE/DELETE side — each shipped as its own PR; this entry covers Step 1
+- **Phase 3 Step 2. Hooks (UPDATE side: `beforeUpdate`)** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Added `beforeUpdate(changes)` to `Model` (no-op by default, overridable), called before the actual UPDATE from both `update(changes)` and `save()`
+  - `changes` can be mutated inside the hook (passed by reference) and is reflected onto the instance after the write; throwing aborts the UPDATE
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
