@@ -51,3 +51,16 @@
   - 変更後: まずブランド付きで`Model`インスタンスを構築し`values`を代入 → `instance.beforeCreate()`を呼ぶ（フックが`this`を書き換える・例外を投げて中断できる）→ その時点のインスタンスの状態をINSERTペイロードとして使う → `insertRow`の戻り値（サーバー側生成カラム含む）を同じインスタンスにマージして返す
   - これにより、`add()`の戻り値は「hydrateし直した別インスタンス」ではなく「`beforeCreate()`で書き換えられたのと同一のインスタンス」になる
 - 単体テスト（`hooks.test.ts`）: `beforeCreate()`でのインスタンス書き換え（正規化）が実際のINSERT内容に反映されること、例外を投げるとINSERT自体が実行されないこと、overrideしなければデフォルトでno-opであることを確認
+
+## Phase 3 Step 2. hooks（UPDATE系: `beforeUpdate`）
+
+### Added
+
+- 単体テスト（`hooks.test.ts`）を拡張: `update()`/`save()`双方で`beforeUpdate()`による`changes`の書き換えが実UPDATEとインスタンスの両方に反映されること、例外を投げるとどちらもUPDATEを実行しないこと、overrideしなければデフォルトno-opであることを確認。実装本体（`beforeUpdate`の追加・呼び出し配線）は`src/model/CHANGELOG.ja.md`参照
+
+## Phase 3 Step 3. hooks（DELETE系: `beforeDelete`）
+
+### Added
+
+- 単体テスト（`hooks.test.ts`）を拡張: `delete()`実行前に`beforeDelete()`が呼ばれること、例外を投げるとDELETE自体が実行されないこと、overrideしなければデフォルトno-opであることを確認。実装本体は`src/model/CHANGELOG.ja.md`参照
+- これでPhase 3（hooks実装）3ステップ分のコンテキスト側テストが揃った

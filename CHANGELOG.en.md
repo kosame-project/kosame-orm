@@ -37,5 +37,8 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
 - **Phase 3 Step 2. Hooks (UPDATE side: `beforeUpdate`)** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
   - Added `beforeUpdate(changes)` to `Model` (no-op by default, overridable), called before the actual UPDATE from both `update(changes)` and `save()`
   - `changes` can be mutated inside the hook (passed by reference) and is reflected onto the instance after the write; throwing aborts the UPDATE
+- **Phase 3 Step 3. Hooks (DELETE side: `beforeDelete`)** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Added `beforeDelete()` to `Model` (no-op by default, overridable), called right before `delete()`'s DELETE; throwing aborts it
+  - This completes all three Phase 3 (hooks) steps — INSERT, UPDATE, DELETE
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

@@ -37,5 +37,8 @@
 - **Phase 3 Step 2. hooks（UPDATE系: `beforeUpdate`）**（詳細は `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
   - `Model`に`beforeUpdate(changes)`（デフォルトno-op、override可能）を追加。`update(changes)`/`save()`どちらの経路でも実際のUPDATE前に呼ばれる
   - `changes`はフック内で書き換え可能（参照渡し）で、UPDATE後にインスタンスへも反映される。例外を投げるとUPDATE自体を中止する
+- **Phase 3 Step 3. hooks（DELETE系: `beforeDelete`）**（詳細は `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
+  - `Model`に`beforeDelete()`（デフォルトno-op、override可能）を追加。`delete()`の直前に呼ばれ、例外を投げるとDELETE自体を中止する
+  - これでPhase 3（hooks実装）のINSERT/UPDATE/DELETE全ステップが完了
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
