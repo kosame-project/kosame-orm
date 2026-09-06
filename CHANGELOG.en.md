@@ -30,5 +30,9 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Relations are resolved with a single batched `IN (...)` query per relation plus app-side hydration (group-by on the parent key) — no JOINs
   - Added an `include` option to `find()` (`context.users.find(pk, { include: ["posts"] })`) to fetch associations
   - Nesting stops at one level (as decided). Real PostgreSQL/MySQL verification is deferred to Phase 9, same as Step 3
+- **Phase 3 Step 1. Hooks (INSERT side: `beforeCreate`)** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Added `beforeCreate()` to `Model` (no-op by default, overridable). Called before `context.<collection>.add()`'s INSERT; throwing aborts the insert
+  - Added `protected get raw()` to `Model` so hook overrides can reach the raw drizzle handle (a preview of Phase 7's `context.raw`)
+  - Phase 3 is being split into three steps — INSERT/UPDATE/DELETE side — each shipped as its own PR; this entry covers Step 1
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

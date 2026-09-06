@@ -30,5 +30,9 @@
   - リレーションはJOINを使わず、親/子キーをまとめた`IN`句のバッチクエリ1本＋アプリ側hydration（親キーでのgroupBy）で解決する方式に統一
   - `context.users.find(pk, { include: ["posts"] })`のように、`find()`に`include`オプションを追加してアソシエーションを取得できるようにした
   - ネストは1段階まで（決定事項通り）。PostgreSQL/MySQLでの実DB検証はStep 3と同様、Phase 9まで保留
+- **Phase 3 Step 1. hooks（INSERT系: `beforeCreate`）**（詳細は `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
+  - `Model`に`beforeCreate()`（デフォルトno-op、override可能）を追加。`context.<collection>.add()`のINSERT前に呼び出され、例外を投げるとINSERT自体を中止する
+  - `Model`に`protected get raw()`を追加し、フック内からdrizzleの生ハンドルへアクセスできるようにした（Phase 7の`context.raw`を先取り）
+  - Phase 3はINSERT系/UPDATE系/DELETE系の3ステップに分割し、それぞれ別PRとして進める方針（このエントリはStep 1分）
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
