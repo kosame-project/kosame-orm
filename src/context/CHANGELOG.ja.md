@@ -64,3 +64,14 @@
 
 - 単体テスト（`hooks.test.ts`）を拡張: `delete()`実行前に`beforeDelete()`が呼ばれること、例外を投げるとDELETE自体が実行されないこと、overrideしなければデフォルトno-opであることを確認。実装本体は`src/model/CHANGELOG.ja.md`参照
 - これでPhase 3（hooks実装）3ステップ分のコンテキスト側テストが揃った
+
+## Phase 4 Step 1. トランザクション（基本API・ネスト）
+
+### Added
+
+- `Context`に`transaction<R>(callback)`を実装
+  - `#schema`（コンストラクタ引数として渡された元のschema）と`#txDepth`（ネスト段数、デフォルト0）を新たにprivateフィールドとして保持
+  - 呼び出すと`src/query`の`runTransaction(db, depth, fn)`（dialectごとのBEGIN/SAVEPOINT分岐、詳細は`src/query/CHANGELOG.ja.md`参照）に処理を委譲し、コールバックには`#txDepth + 1`を持つ新しい`Context`インスタンス（`tx`ハンドル＋同じschemaで再構築）を`txContext`として渡す
+  - 「Modelインスタンスは生成時のコンテキストに固定」という既存決定（Phase 2）により、`transaction()`より前に取得済みのインスタンスは自動的にトランザクションに参加しない（新たな実装は不要、既存の設計の帰結）
+- 単体テスト（`transaction.test.ts`）: 成功時のコミット、失敗時（非同期gapを挟んだ例外）のロールバック、ネストしたトランザクションの内側だけロールバックされるケース・外側のロールバックが内側のコミット済み内容も巻き戻すケースを確認
+  - **SQLite固有の注意点として発見**: `better-sqlite3`/`bun:sqlite`は単一コネクションのため、`context.transaction()`実行中に「トランザクション外」のはずの`context`経由の書き込みを行うと、実際には同じコネクション上の同一トランザクションの一部として扱われ、そのトランザクションのロールバックに巻き込まれる。PostgreSQL/MySQLのようなコネクションプール型のdialectでは`db.transaction()`が別コネクションをチェックアウトするため本来隔離されるが、単一コネクションのSQLiteではこの隔離が成立しない。決定事項「トランザクション外で取得済みのModelインスタンスは参加しない」自体は変わらない（インスタンスは常に生成時のcontextを参照している）が、その参照先のcontextがたまたま今トランザクション中のコネクションと同じ場合はこの限りではない、という実装上の制約としてテストに明記した

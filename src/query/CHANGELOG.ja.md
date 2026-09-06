@@ -22,3 +22,12 @@
 
 - `getColumn(table, key)`（`columns.ts`）: `getTableColumns`からキー名（JSプロパティ名）でカラムを1つ取り出す。見つからなければ例外
 - `selectWhereIn(db, table, column, values)`（`crud.ts`）: 指定カラムに対する`IN`句のバッチSELECT。アソシエーションの子/親をまとめて取得するために`src/associations`から利用する。`values`が空配列の場合はクエリを発行せず空配列を返す
+
+## Phase 4 Step 1. トランザクション（基本API・ネスト）
+
+### Added
+
+- `isSyncDatabase(db)` / `runTransaction(db, depth, fn)`（`transaction.ts`）: dialectをまたいで`context.transaction()`を成立させる低レベルロジック
+  - **発見した問題**: `better-sqlite3`/`bun:sqlite`（drizzleが`db.resultKind === "sync"`として区別する同期ドライバ）は、drizzleのネイティブな`db.transaction(async (tx) => {...})`ラッパーに非同期コールバックを渡すと正しく動かない。実際に検証したところ、`bun:sqlite`は`await`を挟んだ時点でコミット済みの状態になり例外を投げてもロールバックされず、`better-sqlite3`（Node.js経由で検証）に至っては`"Transaction function cannot return a promise"`という例外を投げて失敗する。一方MySQL（`mysql2`、実コンテナで検証）は非同期gapを挟んでも正しくロールバックされる。ネイティブラッパーが同期コールバックしか想定していないことが原因で、SQLite固有の問題
+  - **対応方式**: `db.resultKind === "sync"`のときはdrizzleの`.transaction()`を使わず、同じ`db`ハンドルに対して生SQLの`BEGIN`/`COMMIT`/`ROLLBACK`（ネスト時は`SAVEPOINT`/`RELEASE SAVEPOINT`/`ROLLBACK TO SAVEPOINT`）を手動発行する。これにより、ユーザー向けのAPIは3dialect共通で`context.transaction(async (txContext) => {...})`のまま（SQLiteだけ別の呼び出し方を要求しない）で正しく動作する。dialect名ではなく`resultKind`というdrizzleが公開しているプロパティでの機械的な判定
+  - 非同期ドライバ（`resultKind`が`"sync"`でない: PostgreSQL/MySQL/libsql/D1）はそのままdrizzleの`db.transaction()`に委譲する。ネストは`tx.transaction()`（drizzle自身がdialectごとにSAVEPOINT等で実装済み）に任せる
