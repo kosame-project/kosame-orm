@@ -68,6 +68,30 @@ class RejectingOnUpdateUser extends Model {
   }
 }
 
+const deleteAttempts: string[] = [];
+
+class LoggingUser extends Model {
+  static table = usersTable;
+  declare id: number;
+  declare name: string;
+  declare email: string;
+
+  override async beforeDelete(): Promise<void> {
+    deleteAttempts.push(this.email);
+  }
+}
+
+class RejectingOnDeleteUser extends Model {
+  static table = usersTable;
+  declare id: number;
+  declare name: string;
+  declare email: string;
+
+  override async beforeDelete(): Promise<void> {
+    throw new Error("deletion is disabled");
+  }
+}
+
 function createTestContext<T extends { new (...args: any): Model; table: typeof usersTable }>(modelClass: T) {
   const sqlite = new Database(":memory:");
   sqlite.exec(
@@ -157,5 +181,36 @@ describe("beforeUpdate()", () => {
     await user.update({ email: "Henry@Example.com" });
 
     expect(user.email).toBe("Henry@Example.com");
+  });
+});
+
+describe("beforeDelete()", () => {
+  test("runs before the row is removed", async () => {
+    deleteAttempts.length = 0;
+    const context = createTestContext(LoggingUser);
+    const user = await context.users.add({ name: "iris", email: "iris@example.com" });
+
+    await user.delete();
+
+    expect(deleteAttempts).toEqual(["iris@example.com"]);
+    expect(await context.users.find(user.id)).toBeUndefined();
+  });
+
+  test("throwing aborts delete() entirely", async () => {
+    const context = createTestContext(RejectingOnDeleteUser);
+    const user = await context.users.add({ name: "jack", email: "jack@example.com" });
+
+    await expect(user.delete()).rejects.toThrow("deletion is disabled");
+
+    expect(await context.users.find(user.id)).toBeInstanceOf(RejectingOnDeleteUser);
+  });
+
+  test("is a no-op by default", async () => {
+    const context = createTestContext(PlainUser);
+    const user = await context.users.add({ name: "kate", email: "kate@example.com" });
+
+    await user.delete();
+
+    expect(await context.users.find(user.id)).toBeUndefined();
   });
 });
