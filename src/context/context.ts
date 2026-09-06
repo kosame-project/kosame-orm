@@ -1,8 +1,9 @@
-import { DB } from "./internal.js";
+import type { ModelContext } from "../model/index.js";
+import { DB } from "../query/index.js";
 import { ModelCollection } from "./collection.js";
 import type { ContextEntries, ContextSchema } from "./types.js";
 
-export class Context<TSchema extends ContextSchema = ContextSchema> {
+export class Context<TSchema extends ContextSchema = ContextSchema> implements ModelContext {
   readonly [DB]: unknown;
 
   constructor(db: unknown, schema: TSchema) {

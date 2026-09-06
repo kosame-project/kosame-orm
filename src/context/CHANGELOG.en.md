@@ -16,4 +16,16 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
   - Unit tests (`context.test.ts`): verifies one `ModelCollection` is built per schema key, and that the resulting entry points are plain enumerable own properties rather than a `Proxy`
   - `src/index.ts` now exports `createContext` (value) and `Context`/`ContextSchema`/`ModelClass`/`ContextEntries` (types only). The `Context` class itself is not exported as a value — constructing it directly would bypass the intersection type `createContext` attaches, silently losing type safety on the entry points
 
-**Not yet implemented (Phase 2 Step 3+)**: the drizzle-initialization simplifications (no `schema` option, camelCase-only columns, `logger` off by default) are the user's own drizzle setup code, not something `createContext` inspects — `db` stays untyped (`unknown`) here since nothing yet calls into it. Its type will be narrowed once CRUD translation (Step 3) actually needs to.
+**Resolved in Phase 2 Step 3**: the "narrow `db`'s type in Step 3" note above was settled not by giving `db` a type parameter, but by passing it through opaquely to `src/query`'s table-level CRUD functions instead (the `db: any` trust boundary is contained there; the public `createContext(db: unknown, schema)` signature is unchanged). See the entry below.
+
+## Phase 2 Step 3. CRUD translation (`context.users.find()` / `add()`)
+
+### Added
+
+- Implemented `find(pkValue)` / `add(values)` on `ModelCollection` (`src/context/collection.ts`)
+  - `find()`: SELECTs by primary key and hydrates a `Model` instance if found, `undefined` otherwise
+  - `add()`: INSERTs via `src/query`'s `insertRow` (which uses `.returning()` or `$returningId()` + a re-select depending on the dialect to get the full row back) and hydrates a `Model` instance from it
+  - `ModelCollection` is now also generic over the table type (`TTable`), so `add()`'s argument is typed as `InferInsertModel<TTable>` (see the "型推論の互換性" decision). `Model` itself stays non-generic (`class User extends Model {}`, unchanged) — the type inference only flows through the context-level API
+  - `ModelClass` (`src/context/types.ts`) gained `readonly table: TTable` so `ModelCollection` can reach `static table` in a type-safe way
+- The `DB` Symbol `Context` holds moved into `src/query` (new directory, see its Step 3 entry). `src/context/internal.ts` was removed, and `Context` now `implements ModelContext` (the interface from `src/model`)
+- Extended `context.test.ts` to run against a real SQLite DB via `bun:sqlite` (`drizzle-orm/bun-sqlite`), covering `add()`/`find()` together with `Model`'s `save()`/`update()`/`delete()`/`reload()`

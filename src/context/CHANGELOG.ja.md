@@ -16,4 +16,16 @@
   - 単体テスト（`context.test.ts`）: schemaのキーごとに`ModelCollection`が1つずつ生成されること、生成された入り口が`Proxy`ではなく通常の列挙可能な自プロパティであることを確認
   - `src/index.ts`から`createContext`（値）と`Context`/`ContextSchema`/`ModelClass`/`ContextEntries`（型のみ）をエクスポート。`Context`クラス自体は値としては公開しない（直接`new Context()`すると`createContext`が付ける交差型が付かずローカルの型安全性が崩れるため）
 
-**未実装（Phase 2 Step 3以降）**: drizzle初期化時の設定簡素化（`schema`を渡さない・camelCase統一・`logger`デフォルトoff）はユーザー側のdrizzle初期化コードの話であり、`createContext`自体はdbの中身を検査しないため今回のスコープでは触れていない。実際にCRUD変換で`db`を使い始めるタイミング（Step 3）で、必要なら型を絞る。
+**Phase 2 Step 3で解消**: 上記の「dbの型はStep 3で絞る」という宿題は、`db`自体の型パラメータ化ではなく「`src/query`のテーブルレベルCRUD関数に不透明なまま渡す」形で決着した（`db: any`として扱う境界を`src/query`側に閉じ込め、公開APIの`createContext(db: unknown, schema)`はそのまま）。詳細は次のエントリを参照。
+
+## Phase 2 Step 3. CRUD変換（`context.users.find()` / `add()`）
+
+### Added
+
+- `ModelCollection`（`src/context/collection.ts`）に`find(pkValue)` / `add(values)`を実装
+  - `find()`: 主キーでSELECTし、見つかれば`Model`インスタンスにhydrateして返す。見つからなければ`undefined`
+  - `add()`: `src/query`の`insertRow`でINSERT（dialect差に応じて`.returning()`または`$returningId()`＋再SELECTで完全な行を取得）し、`Model`インスタンスにhydrateして返す
+  - `ModelCollection`はテーブル型（`TTable`）についてもジェネリックにし、`add()`の引数を`InferInsertModel<TTable>`で型付け（決定事項「型推論の互換性」）。`Model`クラス自体は非ジェネリック（`class User extends Model {}`のまま）という既存の型に反しない範囲で、コンテキスト経由のAPI側だけ型推論を効かせている
+  - `ModelClass`（`src/context/types.ts`）に`readonly table: TTable`を追加し、`ModelCollection`から`static table`を型安全に参照できるようにした
+- `Context`が保持する`DB`Symbolは`src/query`（新設、Step 3参照）に移設。`src/context/internal.ts`は削除し、`Context`クラスは新たに`ModelContext`（`src/model`側の型）を`implements`するようにした
+- 単体テスト（`context.test.ts`）を`bun:sqlite`（`drizzle-orm/bun-sqlite`）を使った実DB経由のテストに拡張。`add()`/`find()`、および`Model`側の`save()`/`update()`/`delete()`/`reload()`との組み合わせ動作を確認

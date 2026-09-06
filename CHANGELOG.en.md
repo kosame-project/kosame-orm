@@ -20,5 +20,10 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
 - **Phase 2 Step 2. Context (DbContext equivalent)** (see `src/context/CHANGELOG.en.md` for details)
   - Implemented the `createContext(db, schema)` factory: iterates `schema` to assemble `context.users`/`context.posts` entry points at construction time (no `Proxy`)
   - The drizzle `db`/`tx` handle is stored internally using the same non-exported Symbol technique as the Model foundation's `INTERNAL` brand
+- **Phase 2 Step 3. CRUD translation** (see `src/query/CHANGELOG.en.md` / `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Introduced `src/query`, a new directory holding the table-level CRUD translation logic between `Model` and drizzle (primary-key lookup, INSERT/SELECT/UPDATE/DELETE; PostgreSQL/SQLite use `.returning()`, MySQL uses `$returningId()` + a re-select to absorb the dialect difference)
+  - Implemented `Model`'s instance methods `save()` / `update()` / `delete()` / `reload()`
+  - Implemented `context.users.find()` / `context.users.add()` (using drizzle's inferred `InferInsertModel` type for `add()`'s argument)
+  - Switched test-only SQLite usage to `bun:sqlite` (`drizzle-orm/bun-sqlite`) after `bun test` crashed on `better-sqlite3` on this machine
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

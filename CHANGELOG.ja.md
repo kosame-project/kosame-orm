@@ -20,5 +20,10 @@
 - **Phase 2 Step 2. コンテキスト（DbContext相当）**（詳細は `src/context/CHANGELOG.ja.md` 参照）
   - `createContext(db, schema)`ファクトリを実装。schemaをiterateして`context.users`/`context.posts`等の入り口を起動時に組み立てる（Proxy不使用）
   - drizzleの`db`/`tx`ハンドルは、Model基盤の`INTERNAL`ブランドと同じ非公開Symbol方式で内部保持
+- **Phase 2 Step 3. CRUD変換**（詳細は `src/query/CHANGELOG.ja.md` / `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
+  - `Model`とdrizzleの間を仲介するテーブルレベルCRUD変換ロジックを`src/query`として新規に切り出した（主キー特定、INSERT/SELECT/UPDATE/DELETE。PostgreSQL/SQLiteは`.returning()`、MySQLは`$returningId()`＋再SELECTでdialect差を吸収）
+  - `Model`のインスタンスメソッド`save()`/`update()`/`delete()`/`reload()`を実装
+  - `context.users.find()`/`context.users.add()`を実装（drizzleの推論型`InferInsertModel`を`add()`の引数型として採用）
+  - `bun test`が本機の`better-sqlite3`でクラッシュするため、テストは`bun:sqlite`（`drizzle-orm/bun-sqlite`）に切り替えて実施
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

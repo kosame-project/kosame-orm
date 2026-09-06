@@ -12,3 +12,13 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Implemented the `Model` base class (`src/model/model.ts`): the constructor throws when the brand doesn't match, and holds the context reference in a private `#context` field via constructor injection
   - Declared `static table` (typed as drizzle's `Table`) as a `declare static` placeholder that subclasses are expected to override
   - Added a unit test (`model.test.ts`) verifying that a brand mismatch throws
+
+- **Phase 2 Step 3. CRUD translation (instance methods)**
+  - Implemented `save()` / `update(changes)` / `delete()` / `reload()`. Each translates into the table-level CRUD functions from `src/query` (`updateByPrimaryKey` / `deleteByPrimaryKey` / `selectByPrimaryKey`)
+    - `save()`: writes every non-primary-key column back via UPDATE, using whatever the instance's own properties currently hold (intended usage: mutate the instance's fields directly, then call `save()`)
+    - `update(changes)`: UPDATEs only the given fields, and reflects the same values onto the instance immediately
+    - `delete()`: DELETEs by primary key
+    - `reload()`: re-SELECTs by primary key and overwrites every instance property with the returned row
+  - All four require a primary key (throw if `src/query`'s `getPrimaryKey` can't find one)
+  - `ModelConstructorArgs.context` changed from `unknown` to `ModelContext` (`readonly [DB]: unknown`, `DB` being the non-exported Symbol from `src/query`), so instance methods can reach the drizzle `db`/`tx` handle through the context reference
+  - `src/index.ts` now also exports the `ModelContext` type
