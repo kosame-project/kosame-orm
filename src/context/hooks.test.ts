@@ -42,6 +42,32 @@ class PlainUser extends Model {
   declare email: string;
 }
 
+class NormalizingOnUpdateUser extends Model {
+  static table = usersTable;
+  declare id: number;
+  declare name: string;
+  declare email: string;
+
+  override async beforeUpdate(changes: Record<string, unknown>): Promise<void> {
+    if (typeof changes["email"] === "string") {
+      changes["email"] = changes["email"].toLowerCase();
+    }
+  }
+}
+
+class RejectingOnUpdateUser extends Model {
+  static table = usersTable;
+  declare id: number;
+  declare name: string;
+  declare email: string;
+
+  override async beforeUpdate(changes: Record<string, unknown>): Promise<void> {
+    if (changes["email"] === "") {
+      throw new Error("email cannot be blank");
+    }
+  }
+}
+
 function createTestContext<T extends { new (...args: any): Model; table: typeof usersTable }>(modelClass: T) {
   const sqlite = new Database(":memory:");
   sqlite.exec(
@@ -76,5 +102,60 @@ describe("beforeCreate()", () => {
     const context = createTestContext(PlainUser);
     const user = await context.users.add({ name: "carol", email: "Carol@Example.com" });
     expect(user.email).toBe("Carol@Example.com");
+  });
+});
+
+describe("beforeUpdate()", () => {
+  test("update(): can mutate `changes` before the UPDATE runs, and the instance reflects the mutation", async () => {
+    const context = createTestContext(NormalizingOnUpdateUser);
+    const user = await context.users.add({ name: "dave", email: "dave@example.com" });
+
+    await user.update({ email: "Dave@Example.com" });
+
+    expect(user.email).toBe("dave@example.com");
+    const reselected = await context.users.find(user.id);
+    expect(reselected?.email).toBe("dave@example.com");
+  });
+
+  test("save(): also runs beforeUpdate() over the full set of non-primary-key columns", async () => {
+    const context = createTestContext(NormalizingOnUpdateUser);
+    const user = await context.users.add({ name: "erin", email: "erin@example.com" });
+
+    user.email = "Erin@Example.com";
+    await user.save();
+
+    expect(user.email).toBe("erin@example.com");
+    const reselected = await context.users.find(user.id);
+    expect(reselected?.email).toBe("erin@example.com");
+  });
+
+  test("throwing aborts update() entirely", async () => {
+    const context = createTestContext(RejectingOnUpdateUser);
+    const user = await context.users.add({ name: "frank", email: "frank@example.com" });
+
+    await expect(user.update({ email: "" })).rejects.toThrow("email cannot be blank");
+
+    const reselected = await context.users.find(user.id);
+    expect(reselected?.email).toBe("frank@example.com");
+  });
+
+  test("throwing aborts save() entirely", async () => {
+    const context = createTestContext(RejectingOnUpdateUser);
+    const user = await context.users.add({ name: "grace", email: "grace@example.com" });
+
+    user.email = "";
+    await expect(user.save()).rejects.toThrow("email cannot be blank");
+
+    const reselected = await context.users.find(user.id);
+    expect(reselected?.email).toBe("grace@example.com");
+  });
+
+  test("is a no-op by default", async () => {
+    const context = createTestContext(PlainUser);
+    const user = await context.users.add({ name: "henry", email: "henry@example.com" });
+
+    await user.update({ email: "Henry@Example.com" });
+
+    expect(user.email).toBe("Henry@Example.com");
   });
 });
