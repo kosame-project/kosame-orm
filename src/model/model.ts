@@ -36,6 +36,10 @@ export abstract class Model {
     return this.#context;
   }
 
+  protected get raw(): unknown {
+    return this.#context[DB];
+  }
+
   #table(): Table {
     return (this.constructor as typeof Model).table;
   }
@@ -51,6 +55,8 @@ export abstract class Model {
   #primaryKeyValue(primaryKey: PrimaryKey): unknown {
     return (this as unknown as Record<string, unknown>)[primaryKey.key];
   }
+
+  async beforeCreate(): Promise<void> {}
 
   async save(): Promise<void> {
     const table = this.#table();

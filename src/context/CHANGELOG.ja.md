@@ -41,3 +41,13 @@
 - 単体テスト（`include.test.ts`）: `static relations`で定義した`hasMany`/`belongsTo`が`find()`の`include`経由で正しくhydrateされること、`include`を渡さない場合は該当プロパティに触れないこと、未知のrelation名で例外になることを確認
 
 **既知の制限**: `include`はネスト不可（Requirements.mdの決定事項通り1段階まで）。`context.users.find()`は単一行なので、複数行に対するバッチhydration自体は`src/associations/load.test.ts`（`loadRelation`の直接テスト）でのみ検証しており、コンテキスト経由のAPIとしては複数行を返す汎用クエリメソッド（`findMany`等）自体がまだ存在しない。
+
+## Phase 3 Step 1. hooks（INSERT系: `beforeCreate`）
+
+### Changed
+
+- `ModelCollection.add(values)`（`src/context/collection.ts`）の内部手順を変更
+  - 変更前: `insertRow(values)`で即座にINSERTし、返ってきた行をhydrateしたインスタンスを返すだけだった
+  - 変更後: まずブランド付きで`Model`インスタンスを構築し`values`を代入 → `instance.beforeCreate()`を呼ぶ（フックが`this`を書き換える・例外を投げて中断できる）→ その時点のインスタンスの状態をINSERTペイロードとして使う → `insertRow`の戻り値（サーバー側生成カラム含む）を同じインスタンスにマージして返す
+  - これにより、`add()`の戻り値は「hydrateし直した別インスタンス」ではなく「`beforeCreate()`で書き換えられたのと同一のインスタンス」になる
+- 単体テスト（`hooks.test.ts`）: `beforeCreate()`でのインスタンス書き換え（正規化）が実際のINSERT内容に反映されること、例外を投げるとINSERT自体が実行されないこと、overrideしなければデフォルトでno-opであることを確認

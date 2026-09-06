@@ -41,3 +41,13 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
 - Unit tests (`include.test.ts`): verifies `hasMany`/`belongsTo` defined via `static relations` are correctly hydrated through `find()`'s `include`, that the relation property is left untouched when `include` isn't passed, and that an unknown relation name throws
 
 **Known limitation**: `include` cannot nest (per the "1段階まで" decision in `docs/Requirements.md`). Since `context.users.find()` only ever returns a single row, batch hydration across multiple parent rows is only exercised directly at the `loadRelation` level (`src/associations/load.test.ts`) — there is no context-level, multi-row query method (`findMany`, etc.) yet.
+
+## Phase 3 Step 1. Hooks (INSERT side: `beforeCreate`)
+
+### Changed
+
+- Changed the internal steps of `ModelCollection.add(values)` (`src/context/collection.ts`)
+  - Before: called `insertRow(values)` right away, then hydrated and returned a fresh instance from the returned row
+  - After: build a branded `Model` instance and assign `values` onto it first → call `instance.beforeCreate()` (which can mutate `this` or throw to abort) → use whatever the instance currently holds as the INSERT payload → merge `insertRow`'s result (including server-generated columns) back onto that same instance and return it
+  - As a result, `add()`'s return value is the very instance `beforeCreate()` mutated, not a separately re-hydrated one
+- Unit tests (`hooks.test.ts`): verifies a `beforeCreate()` override that normalizes a field actually affects what gets inserted, that throwing prevents the INSERT from running at all, and that the hook is a no-op by default when not overridden

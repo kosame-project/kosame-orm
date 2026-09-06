@@ -26,3 +26,10 @@
 - **Phase 2 Step 4. アソシエーション向けの`ModelClass`移設**
   - `ModelClass<T, TTable>`（コンストラクタ形状＋`static table`の型）を`src/context/types.ts`から本ディレクトリ（`model.ts`）に移設。`src/associations`が「Modelクラス＋テーブル型」の情報を、`src/context`を経由せず参照する必要が出たため（`src/context`は`src/associations`に依存するようになった。依存の向きが逆になる循環を避けるための移設）
   - `src/context/types.ts`は`ModelClass`を再エクスポートするだけになり、公開API（`src/index.ts`）からの見え方は変わらない
+
+- **Phase 3 Step 1. hooks（INSERT系: `beforeCreate`）**
+  - `protected get raw()`を追加。`this.#context[DB]`（drizzleの生ハンドル）をサブクラスから使えるようにする。Phase 7で決定済みの`context.raw`エスケープハッチと同じ発想を、フックの実装に必要な分だけ先取りしたもの
+  - `beforeCreate(): Promise<void>`を追加。デフォルトはno-op、サブクラスでoverrideして使う。「INSERT前の非同期バリデーション」という決定事項をModel層の素直なメソッドoverrideとして実現した（別のフック登録DSLは用意しない）
+    - 呼び出し元は`context.<collection>.add()`（`src/context`側、Step 1の後続コミット参照）。`beforeCreate()`内で例外を投げるとINSERT自体が実行されない
+    - 呼び出し時点で`this`にはこれからINSERTされるカラム値がすでに代入されているため、`this.email = ...`のような正規化や、`this.raw`を使った非同期のユニーク制約チェック等が書ける
+  - `beforeCreate`/`beforeUpdate`/`beforeDelete`はいずれも`public`なメソッドとして実装する方針にした（`protected`にすると`ModelCollection`等の外部クラスから呼び出せないため）。直接アプリケーションコードから呼ぶことは想定していない、という取り決めのみで担保する

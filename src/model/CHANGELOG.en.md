@@ -26,3 +26,10 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
 - **Phase 2 Step 4. Relocated `ModelClass` for associations**
   - Moved `ModelClass<T, TTable>` (the constructor shape plus `static table`'s type) here (`model.ts`) from `src/context/types.ts`, since `src/associations` needs "Model class + its table type" without going through `src/context` (which itself now depends on `src/associations`) — relocating avoids that dependency becoming a cycle
   - `src/context/types.ts` now just re-exports `ModelClass`; the public API (`src/index.ts`) is unaffected
+
+- **Phase 3 Step 1. Hooks (INSERT side: `beforeCreate`)**
+  - Added `protected get raw()`, exposing `this.#context[DB]` (the raw drizzle handle) to subclasses. A small preview of the `context.raw` escape hatch already decided for Phase 7, added just far enough to support hooks now
+  - Added `beforeCreate(): Promise<void>`, a no-op by default, meant to be overridden in subclasses. This is how the "async validation before INSERT" decision gets implemented — as a plain overridable Model method, not a separate hook-registration DSL
+    - Called by `context.<collection>.add()` (see the following commit under `src/context`). Throwing inside `beforeCreate()` stops the INSERT from running at all
+    - By the time it's called, `this` already has the columns about to be inserted assigned to it, so overrides can normalize them (`this.email = ...`) or run an async uniqueness check via `this.raw`
+  - `beforeCreate`/`beforeUpdate`/`beforeDelete` are all `public` methods (not `protected`) because external classes like `ModelCollection` need to call them; the "don't call these directly from application code" contract is documentation-only, not enforced by the type system
