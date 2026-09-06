@@ -64,3 +64,14 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
 
 - Extended `hooks.test.ts`: verifies `beforeDelete()` runs before `delete()`'s DELETE, that throwing prevents the DELETE from running at all, and that the hook is a no-op by default. The implementation itself is covered in `src/model/CHANGELOG.en.md`
 - This completes the context-side tests for all three Phase 3 (hooks) steps
+
+## Phase 4 Step 1. Transactions (basic API, nesting)
+
+### Added
+
+- Implemented `Context.transaction<R>(callback)`
+  - Added two new private fields: `#schema` (the original schema passed to the constructor) and `#txDepth` (nesting depth, default 0)
+  - Calling it delegates to `src/query`'s `runTransaction(db, depth, fn)` (per-dialect BEGIN/SAVEPOINT branching, see `src/query/CHANGELOG.en.md`), and passes the callback a fresh `Context` (same schema, the `tx` handle, `#txDepth + 1`) as `txContext`
+  - "Model instances are fixed to the context they were built with" (already decided in Phase 2) means instances obtained before calling `transaction()` automatically don't participate in it — nothing new needed here, it just falls out of the existing design
+- Unit tests (`transaction.test.ts`): commit on success, rollback on a throw across a real async gap, an inner rollback that leaves the outer transaction's writes intact, and an outer rollback that also undoes an already-"committed" inner nested transaction
+  - **SQLite-specific caveat found along the way**: since `better-sqlite3`/`bun:sqlite` are single-connection, a write issued through what should be the "outer, non-transactional" context while `context.transaction()` is open actually lands inside that same transaction on the same connection, and gets rolled back with it. Connection-pooled dialects like PostgreSQL/MySQL check out a separate connection for `db.transaction()`, so this isolation genuinely holds there. The "instances outside a transaction don't participate in it" decision is still true (an instance always refers to the context it was built with) — it just doesn't help when that context happens to share SQLite's one and only connection with an open transaction. Documented directly in the test

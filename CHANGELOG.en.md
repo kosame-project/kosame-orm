@@ -40,5 +40,9 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
 - **Phase 3 Step 3. Hooks (DELETE side: `beforeDelete`)** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
   - Added `beforeDelete()` to `Model` (no-op by default, overridable), called right before `delete()`'s DELETE; throwing aborts it
   - This completes all three Phase 3 (hooks) steps — INSERT, UPDATE, DELETE
+- **Phase 4 Step 1. Transactions (basic API, nesting)** (see `src/query/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
+  - Implemented `context.transaction(async (txContext) => {...})`, automatically using a SAVEPOINT when nested
+  - While building this, found (and verified experimentally) that `better-sqlite3`/`bun:sqlite` (synchronous drivers) don't work correctly with an async callback passed to drizzle's native `db.transaction()` (MySQL, tested against a real container, works fine). Fixed by detecting the sync driver and driving the transaction by hand with raw `BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT` statements instead, keeping the same async API across all three dialects
+  - Also found that, since SQLite is single-connection, the "Model instances outside a transaction don't participate in it" decision doesn't hold the same way there (documented in the tests); PostgreSQL/MySQL are unaffected since they use connection pooling
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

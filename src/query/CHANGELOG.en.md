@@ -22,3 +22,12 @@ Change history for the `src/query` directory. Follows the [Keep a Changelog](htt
 
 - `getColumn(table, key)` (`columns.ts`): pulls a single column out of `getTableColumns` by its JS property key, throwing if it's not found
 - `selectWhereIn(db, table, column, values)` (`crud.ts`): a batch `IN (...)` SELECT on one column, used by `src/associations` to fetch a relation's children/parent for a whole set of rows in one query. Returns `[]` without querying when `values` is empty
+
+## Phase 4 Step 1. Transactions (basic API, nesting)
+
+### Added
+
+- `isSyncDatabase(db)` / `runTransaction(db, depth, fn)` (`transaction.ts`): the low-level, dialect-bridging logic behind `context.transaction()`
+  - **Problem found**: `better-sqlite3`/`bun:sqlite` (the synchronous drivers drizzle marks with `db.resultKind === "sync"`) don't work correctly with drizzle's native `db.transaction(async (tx) => {...})` wrapper when given an async callback. Verified experimentally: `bun:sqlite` commits as soon as the callback hits its first `await`, so a later throw doesn't roll anything back; `better-sqlite3` (checked under Node.js) goes further and throws `"Transaction function cannot return a promise"`. MySQL (`mysql2`, tested against a real container), by contrast, rolls back correctly even across a real async gap. The root cause is that the native wrapper assumes a synchronous callback — a SQLite-only problem
+  - **Fix**: when `db.resultKind === "sync"`, skip drizzle's `.transaction()` entirely and drive the transaction by hand on the same `db` handle with raw `BEGIN`/`COMMIT`/`ROLLBACK` (or, when nested, `SAVEPOINT`/`RELEASE SAVEPOINT`/`ROLLBACK TO SAVEPOINT`). This keeps `context.transaction(async (txContext) => {...})` working identically across all three dialects — SQLite doesn't need a different calling convention. The branch is decided by `resultKind`, a property drizzle itself exposes, not by a dialect name
+  - Async drivers (anything where `resultKind` isn't `"sync"`: PostgreSQL, MySQL, libsql, D1) still delegate straight to drizzle's `db.transaction()`; nesting there is left to `tx.transaction()`, which drizzle already implements per-dialect (SAVEPOINTs, etc.)
