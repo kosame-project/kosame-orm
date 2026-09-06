@@ -3,10 +3,14 @@ import { DB, runTransaction } from "../query/index.js";
 import { ModelCollection } from "./collection.js";
 import type { ContextEntries, ContextSchema } from "./types.js";
 
+type TransactionCallback = () => void | Promise<void>;
+
 export class Context<TSchema extends ContextSchema = ContextSchema> implements ModelContext {
   readonly [DB]: unknown;
   readonly #schema: TSchema;
   readonly #txDepth: number;
+  readonly #afterCommitCallbacks: TransactionCallback[] = [];
+  readonly #afterRollbackCallbacks: TransactionCallback[] = [];
 
   constructor(db: unknown, schema: TSchema, txDepth = 0) {
     this[DB] = db;
@@ -21,11 +25,38 @@ export class Context<TSchema extends ContextSchema = ContextSchema> implements M
     }
   }
 
+  afterCommit(callback: TransactionCallback): void {
+    this.#afterCommitCallbacks.push(callback);
+  }
+
+  afterRollback(callback: TransactionCallback): void {
+    this.#afterRollbackCallbacks.push(callback);
+  }
+
   async transaction<R>(callback: (txContext: Context<TSchema> & ContextEntries<TSchema>) => Promise<R>): Promise<R> {
-    return runTransaction(this[DB], this.#txDepth, async (tx) => {
-      const txContext = new Context(tx, this.#schema, this.#txDepth + 1) as Context<TSchema> & ContextEntries<TSchema>;
-      return callback(txContext);
-    });
+    let txContext: (Context<TSchema> & ContextEntries<TSchema>) | undefined;
+
+    let result: R;
+    try {
+      result = await runTransaction(this[DB], this.#txDepth, async (tx) => {
+        txContext = new Context(tx, this.#schema, this.#txDepth + 1) as Context<TSchema> & ContextEntries<TSchema>;
+        return callback(txContext);
+      });
+    } catch (error) {
+      if (txContext) {
+        await runCallbacks(txContext.#afterRollbackCallbacks);
+      }
+      throw error;
+    }
+
+    await runCallbacks(txContext!.#afterCommitCallbacks);
+    return result;
+  }
+}
+
+async function runCallbacks(callbacks: readonly TransactionCallback[]): Promise<void> {
+  for (const callback of callbacks) {
+    await callback();
   }
 }
 

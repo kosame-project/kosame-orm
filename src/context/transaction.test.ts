@@ -102,3 +102,101 @@ describe("context.transaction()", () => {
     expect(await context.users.find(1)).toBeUndefined();
   });
 });
+
+describe("afterCommit() / afterRollback()", () => {
+  test("afterCommit callbacks run in order, only after the transaction actually commits", async () => {
+    const context = createTestContext();
+    const calls: string[] = [];
+
+    await context.transaction(async (txContext) => {
+      txContext.afterCommit(() => {
+        calls.push("first");
+      });
+      await txContext.users.add({ name: "alice" });
+      txContext.afterCommit(() => {
+        calls.push("second");
+      });
+    });
+
+    expect(calls).toEqual(["first", "second"]);
+  });
+
+  test("afterCommit callbacks do not run when the transaction rolls back", async () => {
+    const context = createTestContext();
+    const calls: string[] = [];
+
+    await expect(
+      context.transaction(async (txContext) => {
+        txContext.afterCommit(() => {
+          calls.push("should-not-run");
+        });
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+
+    expect(calls).toEqual([]);
+  });
+
+  test("afterRollback callbacks run only when the transaction rolls back", async () => {
+    const context = createTestContext();
+    const calls: string[] = [];
+
+    await expect(
+      context.transaction(async (txContext) => {
+        txContext.afterRollback(() => {
+          calls.push("rolled-back");
+        });
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+
+    expect(calls).toEqual(["rolled-back"]);
+  });
+
+  test("afterRollback callbacks do not run when the transaction commits", async () => {
+    const context = createTestContext();
+    const calls: string[] = [];
+
+    await context.transaction(async (txContext) => {
+      txContext.afterRollback(() => {
+        calls.push("should-not-run");
+      });
+      await txContext.users.add({ name: "bob" });
+    });
+
+    expect(calls).toEqual([]);
+  });
+
+  test("a nested transaction's afterCommit fires when its own savepoint releases, even if unregistered on the outer txContext", async () => {
+    const context = createTestContext();
+    const calls: string[] = [];
+
+    await context.transaction(async (txContext) => {
+      txContext.afterCommit(() => {
+        calls.push("outer");
+      });
+      await txContext.transaction(async (innerTxContext) => {
+        innerTxContext.afterCommit(() => {
+          calls.push("inner");
+        });
+      });
+    });
+
+    expect(calls).toEqual(["inner", "outer"]);
+  });
+
+  test("throwing while committing surfaces the transaction() rejection instead of the awaited result", async () => {
+    const context = createTestContext();
+
+    await expect(
+      context.transaction(async (txContext) => {
+        txContext.afterCommit(() => {
+          throw new Error("afterCommit failure");
+        });
+        await txContext.users.add({ name: "carol" });
+      }),
+    ).rejects.toThrow("afterCommit failure");
+
+    expect((await context.users.find(1))?.name).toBe("carol");
+  });
+});

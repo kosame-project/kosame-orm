@@ -44,5 +44,9 @@
   - `context.transaction(async (txContext) => {...})`を実装。ネスト時は自動的にSAVEPOINTを使う
   - 実装中に、`better-sqlite3`/`bun:sqlite`（同期ドライバ）はdrizzleネイティブの`db.transaction()`に非同期コールバックを渡すと正しく動作しないことを実際に検証で発見（MySQL実コンテナでは正常動作）。dialectを判定して同期ドライバのときだけ生SQLの`BEGIN`/`COMMIT`/`ROLLBACK`・`SAVEPOINT`を手動発行する方式で解決し、ユーザー向けAPIは3dialect共通のまま維持
   - SQLiteは単一コネクションのため、「トランザクション外のModelインスタンスは参加しない」という決定事項が期待通りには機能しないケースがあることも発見・テストに明記（PostgreSQL/MySQLはコネクションプールのため問題なし）
+- **Phase 4 Step 2. トランザクション（`afterCommit`/`afterRollback`）**（詳細は `src/context/CHANGELOG.ja.md` 参照）
+  - `Context`に`afterCommit(callback)`/`afterRollback(callback)`を実装。コミット成功後・ロールバック後にそれぞれ登録順で呼び出す
+  - ネストしたトランザクションでは、内側の`afterCommit`は内側のSAVEPOINTがreleaseされた時点で発火する（外側の最終的なコミットは待たない）という初期スコープ向けのローカルなセマンティクスを採用
+  - これでPhase 4（トランザクション）の2ステップが完了
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
