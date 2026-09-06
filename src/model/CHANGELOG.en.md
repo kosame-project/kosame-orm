@@ -33,3 +33,16 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
     - Called by `context.<collection>.add()` (see the following commit under `src/context`). Throwing inside `beforeCreate()` stops the INSERT from running at all
     - By the time it's called, `this` already has the columns about to be inserted assigned to it, so overrides can normalize them (`this.email = ...`) or run an async uniqueness check via `this.raw`
   - `beforeCreate`/`beforeUpdate`/`beforeDelete` are all `public` methods (not `protected`) because external classes like `ModelCollection` need to call them; the "don't call these directly from application code" contract is documentation-only, not enforced by the type system
+
+- **Phase 3 Step 2. Hooks (UPDATE side: `beforeUpdate`)**
+  - Added `beforeUpdate(changes: Record<string, unknown>): Promise<void>`, a no-op by default, meant to be overridden
+  - Called from both `update(changes)` and `save()`: `update()` passes through whatever the caller gave it, `save()` passes the "every non-primary-key column" object it builds itself. Both call it right before the actual UPDATE
+  - `changes` is passed by reference, so an override mutating it changes what actually gets written; after the UPDATE, `Object.assign(this, changes)` reflects that back onto the instance (`save()` now does this too, to match `update()`'s existing behavior)
+  - Throwing stops either `update()` or `save()` from running the UPDATE at all
+
+- **Phase 3 Step 3. Hooks (DELETE side: `beforeDelete`)**
+  - Added `beforeDelete(): Promise<void>`, a no-op by default, meant to be overridden
+  - Called from `delete()`, right before the actual DELETE
+  - Takes no arguments (same reasoning as `beforeCreate()` — the row's column values are already readable via `this`); checking for related records etc. is expected to go through `this.raw` with a hand-written query
+  - Throwing stops `delete()` from running the DELETE
+  - This completes all three Phase 3 (hooks) steps — INSERT, UPDATE, DELETE

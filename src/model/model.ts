@@ -58,6 +58,10 @@ export abstract class Model {
 
   async beforeCreate(): Promise<void> {}
 
+  async beforeUpdate(_changes: Record<string, unknown>): Promise<void> {}
+
+  async beforeDelete(): Promise<void> {}
+
   async save(): Promise<void> {
     const table = this.#table();
     const primaryKey = this.#requirePrimaryKey("save");
@@ -67,11 +71,14 @@ export abstract class Model {
         changes[key] = (this as unknown as Record<string, unknown>)[key];
       }
     }
+    await this.beforeUpdate(changes);
     await updateByPrimaryKey(this.#context[DB], table, primaryKey, this.#primaryKeyValue(primaryKey), changes);
+    Object.assign(this, changes);
   }
 
   async update(changes: Record<string, unknown>): Promise<void> {
     const primaryKey = this.#requirePrimaryKey("update");
+    await this.beforeUpdate(changes);
     await updateByPrimaryKey(
       this.#context[DB],
       this.#table(),
@@ -84,6 +91,7 @@ export abstract class Model {
 
   async delete(): Promise<void> {
     const primaryKey = this.#requirePrimaryKey("delete");
+    await this.beforeDelete();
     await deleteByPrimaryKey(this.#context[DB], this.#table(), primaryKey, this.#primaryKeyValue(primaryKey));
   }
 

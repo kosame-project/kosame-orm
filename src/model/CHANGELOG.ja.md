@@ -33,3 +33,16 @@
     - 呼び出し元は`context.<collection>.add()`（`src/context`側、Step 1の後続コミット参照）。`beforeCreate()`内で例外を投げるとINSERT自体が実行されない
     - 呼び出し時点で`this`にはこれからINSERTされるカラム値がすでに代入されているため、`this.email = ...`のような正規化や、`this.raw`を使った非同期のユニーク制約チェック等が書ける
   - `beforeCreate`/`beforeUpdate`/`beforeDelete`はいずれも`public`なメソッドとして実装する方針にした（`protected`にすると`ModelCollection`等の外部クラスから呼び出せないため）。直接アプリケーションコードから呼ぶことは想定していない、という取り決めのみで担保する
+
+- **Phase 3 Step 2. hooks（UPDATE系: `beforeUpdate`）**
+  - `beforeUpdate(changes: Record<string, unknown>): Promise<void>`を追加。デフォルトはno-op、サブクラスでoverrideして使う
+  - `update(changes)`と`save()`の両方から呼ばれる。`update()`は呼び出し元が渡した`changes`をそのまま渡し、`save()`は自身が組み立てた「主キー以外の全カラム」の`changes`を渡す。どちらも実際のUPDATEの直前に呼ばれる
+  - `changes`は参照渡しのオブジェクトなので、フック側で書き換えるとその書き換えがそのままUPDATEの内容になり、UPDATE後に`Object.assign(this, changes)`でインスタンスにも反映される（`save()`側もこの挙動に合わせて末尾に`Object.assign(this, changes)`を追加）
+  - 例外を投げると`update()`/`save()`いずれもUPDATE自体を実行しない
+
+- **Phase 3 Step 3. hooks（DELETE系: `beforeDelete`）**
+  - `beforeDelete(): Promise<void>`を追加。デフォルトはno-op、サブクラスでoverrideして使う
+  - `delete()`から、実際のDELETEの直前に呼ばれる
+  - 引数なし（`beforeCreate()`と同様、削除対象のカラム値は`this`からすでに読める）。関連レコードの存在チェック等は`this.raw`で自前クエリを書く想定
+  - 例外を投げると`delete()`自体がDELETEを実行しない
+  - これでPhase 3（hooks実装）の3ステップ（INSERT/UPDATE/DELETE）が揃った

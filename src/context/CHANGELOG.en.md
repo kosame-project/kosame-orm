@@ -51,3 +51,16 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
   - After: build a branded `Model` instance and assign `values` onto it first → call `instance.beforeCreate()` (which can mutate `this` or throw to abort) → use whatever the instance currently holds as the INSERT payload → merge `insertRow`'s result (including server-generated columns) back onto that same instance and return it
   - As a result, `add()`'s return value is the very instance `beforeCreate()` mutated, not a separately re-hydrated one
 - Unit tests (`hooks.test.ts`): verifies a `beforeCreate()` override that normalizes a field actually affects what gets inserted, that throwing prevents the INSERT from running at all, and that the hook is a no-op by default when not overridden
+
+## Phase 3 Step 2. Hooks (UPDATE side: `beforeUpdate`)
+
+### Added
+
+- Extended `hooks.test.ts`: for both `update()` and `save()`, verifies a `beforeUpdate()` override mutating `changes` affects both the actual UPDATE and the instance, that throwing prevents either from running the UPDATE, and that the hook is a no-op by default. The implementation itself (adding `beforeUpdate` and wiring the calls) is covered in `src/model/CHANGELOG.en.md`
+
+## Phase 3 Step 3. Hooks (DELETE side: `beforeDelete`)
+
+### Added
+
+- Extended `hooks.test.ts`: verifies `beforeDelete()` runs before `delete()`'s DELETE, that throwing prevents the DELETE from running at all, and that the hook is a no-op by default. The implementation itself is covered in `src/model/CHANGELOG.en.md`
+- This completes the context-side tests for all three Phase 3 (hooks) steps
