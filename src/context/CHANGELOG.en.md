@@ -75,3 +75,14 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
   - "Model instances are fixed to the context they were built with" (already decided in Phase 2) means instances obtained before calling `transaction()` automatically don't participate in it — nothing new needed here, it just falls out of the existing design
 - Unit tests (`transaction.test.ts`): commit on success, rollback on a throw across a real async gap, an inner rollback that leaves the outer transaction's writes intact, and an outer rollback that also undoes an already-"committed" inner nested transaction
   - **SQLite-specific caveat found along the way**: since `better-sqlite3`/`bun:sqlite` are single-connection, a write issued through what should be the "outer, non-transactional" context while `context.transaction()` is open actually lands inside that same transaction on the same connection, and gets rolled back with it. Connection-pooled dialects like PostgreSQL/MySQL check out a separate connection for `db.transaction()`, so this isolation genuinely holds there. The "instances outside a transaction don't participate in it" decision is still true (an instance always refers to the context it was built with) — it just doesn't help when that context happens to share SQLite's one and only connection with an open transaction. Documented directly in the test
+
+## Phase 4 Step 2. Transactions (`afterCommit`/`afterRollback`)
+
+### Added
+
+- Implemented `Context.afterCommit(callback)` / `afterRollback(callback)`
+  - Both just push onto a `#afterCommitCallbacks`/`#afterRollbackCallbacks` array
+  - `transaction()` runs the `afterCommit` list (in registration order, sequentially awaited) once `runTransaction` succeeds, or the `afterRollback` list if it throws
+  - If a callback itself throws, the remaining callbacks in that list are skipped and the error rejects `transaction()`'s own promise (the commit/rollback itself already succeeded — only the post-processing callback failed, and that failure propagates to the caller)
+  - For nested transactions, an inner `txContext.afterCommit()` fires as soon as that inner SAVEPOINT releases — it does not wait for the outermost transaction to actually commit. This is a deliberate, simple, local semantics for the initial scope; documented as a known limitation directly in the tests, since it means an inner `afterCommit` can already have fired even if the outer transaction later rolls back (separate from the fact that the SAVEPOINT's own data changes do get undone by the outer rollback — the DB-level rollback and the JS-level callback firing are two different things here)
+- Unit tests (added to `transaction.test.ts`): callback ordering, `afterCommit` firing only on commit and `afterRollback` only on rollback, the nested-transaction firing timing described above, and a callback that itself throws surfacing through `transaction()`'s rejection

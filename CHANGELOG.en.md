@@ -44,5 +44,9 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Implemented `context.transaction(async (txContext) => {...})`, automatically using a SAVEPOINT when nested
   - While building this, found (and verified experimentally) that `better-sqlite3`/`bun:sqlite` (synchronous drivers) don't work correctly with an async callback passed to drizzle's native `db.transaction()` (MySQL, tested against a real container, works fine). Fixed by detecting the sync driver and driving the transaction by hand with raw `BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT` statements instead, keeping the same async API across all three dialects
   - Also found that, since SQLite is single-connection, the "Model instances outside a transaction don't participate in it" decision doesn't hold the same way there (documented in the tests); PostgreSQL/MySQL are unaffected since they use connection pooling
+- **Phase 4 Step 2. Transactions (`afterCommit`/`afterRollback`)** (see `src/context/CHANGELOG.en.md` for details)
+  - Implemented `Context.afterCommit(callback)`/`afterRollback(callback)`, called in registration order after a successful commit or after a rollback, respectively
+  - For nested transactions, an inner `afterCommit` fires as soon as its own SAVEPOINT releases (it does not wait for the outermost commit) — a deliberate, simple, local semantics for the initial scope
+  - This completes both Phase 4 (transactions) steps
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

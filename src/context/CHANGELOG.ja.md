@@ -75,3 +75,14 @@
   - 「Modelインスタンスは生成時のコンテキストに固定」という既存決定（Phase 2）により、`transaction()`より前に取得済みのインスタンスは自動的にトランザクションに参加しない（新たな実装は不要、既存の設計の帰結）
 - 単体テスト（`transaction.test.ts`）: 成功時のコミット、失敗時（非同期gapを挟んだ例外）のロールバック、ネストしたトランザクションの内側だけロールバックされるケース・外側のロールバックが内側のコミット済み内容も巻き戻すケースを確認
   - **SQLite固有の注意点として発見**: `better-sqlite3`/`bun:sqlite`は単一コネクションのため、`context.transaction()`実行中に「トランザクション外」のはずの`context`経由の書き込みを行うと、実際には同じコネクション上の同一トランザクションの一部として扱われ、そのトランザクションのロールバックに巻き込まれる。PostgreSQL/MySQLのようなコネクションプール型のdialectでは`db.transaction()`が別コネクションをチェックアウトするため本来隔離されるが、単一コネクションのSQLiteではこの隔離が成立しない。決定事項「トランザクション外で取得済みのModelインスタンスは参加しない」自体は変わらない（インスタンスは常に生成時のcontextを参照している）が、その参照先のcontextがたまたま今トランザクション中のコネクションと同じ場合はこの限りではない、という実装上の制約としてテストに明記した
+
+## Phase 4 Step 2. トランザクション（`afterCommit`/`afterRollback`）
+
+### Added
+
+- `Context`に`afterCommit(callback)` / `afterRollback(callback)`を実装
+  - それぞれ`#afterCommitCallbacks`/`#afterRollbackCallbacks`という配列にコールバックを登録するだけのメソッド
+  - `transaction()`側で、`runTransaction`が成功したら`afterCommit`側を、例外を投げたら`afterRollback`側を、登録順に`await`しながら順次呼び出す（並列実行はしない）
+  - コールバック自体が例外を投げた場合はそこで打ち切り、その例外が`transaction()`の戻り値のPromiseを reject する（コミット/ロールバック自体は成功しているが、後処理コールバックの失敗が呼び出し側に伝播する）
+  - ネストしたトランザクションでは、内側の`txContext.afterCommit()`は内側のSAVEPOINTがreleaseされた時点で発火する（外側のコミットを待たない）。これは「初期スコープ向けに割り切ったローカルなセマンティクス」であり、内側がreleaseされた後に外側全体がロールバックされた場合でも内側の`afterCommit`はすでに発火済みになる、という既知の制限として単体テストのコメントに明記した（ネストしたSAVEPOINTのrelease自体が外側のロールバックで巻き戻る、というdrizzle/DB側の一般的な挙動とは別の話）
+- 単体テスト（`transaction.test.ts`に追加）: コールバックの実行順序、コミット時のみ`afterCommit`が・ロールバック時のみ`afterRollback`が発火すること、ネストしたトランザクションでの発火タイミング、コールバック自体が例外を投げた場合に`transaction()`がその例外でrejectすることを確認
