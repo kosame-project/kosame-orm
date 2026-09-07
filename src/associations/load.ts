@@ -3,9 +3,11 @@ import { INTERNAL } from "../model/internal.js";
 import type { Model, ModelClass, ModelContext } from "../model/index.js";
 import { DB, getColumn, getPrimaryKey, selectWhereIn } from "../query/index.js";
 import { getSoftDeleteColumn } from "../soft-delete/index.js";
+import { validateSchema } from "../validation/index.js";
 import type { RelationDescriptor } from "./types.js";
 
 function hydrate<T extends Model>(modelClass: ModelClass<T>, context: ModelContext, row: Record<string, unknown>): T {
+  validateSchema(modelClass, row);
   const instance = new modelClass({ brand: INTERNAL, context });
   Object.assign(instance, row);
   return instance;
