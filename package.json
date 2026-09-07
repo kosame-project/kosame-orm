@@ -8,6 +8,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./pg": {
+      "types": "./dist/pg.d.ts",
+      "default": "./dist/pg.js"
+    },
+    "./mysql": {
+      "types": "./dist/mysql.d.ts",
+      "default": "./dist/mysql.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite.d.ts",
+      "default": "./dist/sqlite.js"
     }
   },
   "types": "./dist/index.d.ts",
