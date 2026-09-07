@@ -114,3 +114,14 @@
 - 単体テスト（`raw.test.ts`）: `context.raw`が`createContext`に渡した`db`インスタンスと同一であること、経由したクエリ結果がプレーンな行でModelインスタンスでないこと、`transaction()`内で`txContext.raw`が実際に使えること（`any`キャストなしで型が通ることも含めて）を確認
 
 **注意（SQLite）**: Phase 4で判明した通り、`better-sqlite3`/`bun:sqlite`は単一コネクションのため`txContext.raw`と`context.raw`が同一オブジェクトを指す（`tx`ハンドルという別概念が実質存在しない）。PostgreSQL/MySQLでは別コネクション/セッションになる。
+
+## Phase 8. バリデーション統合
+
+### Added
+
+- `ModelCollection`（`src/context/collection.ts`）に`src/validation`の`validateSchema`を組み込み
+  - `#hydrate(row)`: インスタンスへの`Object.assign`前に`validateSchema(this.#modelClass, row)`（完全なスキーマ）を実行。`find()`の結果・`add()`後の再取得行の両方がこの経路を通る
+  - `add(values)`: `beforeCreate()`実行後、`insertRow`呼び出し前に`validateSchema(this.#modelClass, currentValues)`を実行
+- `static schema`が定義されていないModelクラス（既存のテストで使っているほとんどのクラス）は`validateSchema`が何もしないため、挙動に変化はない
+- 単体テスト（`validation.test.ts`）: `add()`/`update()`/`save()`が不正な値を拒否すること、`static schema`未定義のModelは検証されないこと、`find()`/`reload()`/アソシエーション経由の取得（`include`）が「DBに直接書き込まれてスキーマから外れた行（スキーマドリフト）」を検出して例外を投げることを確認
+  - ドリフトの再現には、SQLiteの型アフィニティが緩い性質を利用: `NOT NULL`制約には違反しないが期待する型とは異なる値（文字列を数値カラムに）を`context.raw`経由の生SQLで書き込み、hydration時のzod検証で検出させている

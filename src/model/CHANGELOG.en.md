@@ -58,3 +58,9 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
 - **Phase 6. Soft delete**
   - Split `update(changes)`'s internals into a `beforeUpdate(changes)` call plus a new `protected writeUpdate(changes)` (the actual UPDATE + `Object.assign`). The `SoftDeletable` mixin (`src/soft-delete`) needed to reuse the same low-level write path without firing `beforeUpdate` twice
   - This is the only change to `Model` itself — the actual `SoftDeletable` mixin is covered in `src/soft-delete/CHANGELOG.en.md`
+
+- **Phase 8. Validation integration**
+  - Unified `save()`'s previously-separate UPDATE + `Object.assign` into the same `writeUpdate()` call `update()` uses (it hadn't been updated to use `writeUpdate` when that was extracted in Phase 6). This means the new validation logic only has to live in one place (`writeUpdate()`) to cover both `save()` and `update()`
+  - Added `validateSchema(this.constructor, changes, { partial: true })` to `writeUpdate(changes)`, called after `beforeUpdate(changes)` and before the actual UPDATE runs — so it validates whatever the hook ended up producing
+  - Added `validateSchema(this.constructor, row)` (full schema, no `partial`) to `reload()`, before the re-selected row is assigned onto the instance
+  - `validateSchema` no-ops for any Model class without a `static schema`, so existing Model classes are completely unaffected

@@ -114,3 +114,14 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
 - Unit tests (`raw.test.ts`): `context.raw` is the exact same `db` instance passed to `createContext`, query results through it are plain rows rather than Model instances, and `txContext.raw` is actually usable inside `transaction()` (including type-checking without an `any` cast)
 
 **SQLite note**: as found in Phase 4, `better-sqlite3`/`bun:sqlite` are single-connection, so `txContext.raw` and `context.raw` end up being the same object (there's no real separate `tx` handle for them). PostgreSQL/MySQL genuinely use a separate connection/session.
+
+## Phase 8. Validation integration
+
+### Added
+
+- Wired `src/validation`'s `validateSchema` into `ModelCollection` (`src/context/collection.ts`)
+  - `#hydrate(row)`: runs `validateSchema(this.#modelClass, row)` (full schema) before `Object.assign`ing onto the instance — covers both `find()`'s result and the row re-fetched after `add()`'s insert
+  - `add(values)`: runs `validateSchema(this.#modelClass, currentValues)` after `beforeCreate()`, before calling `insertRow`
+- Model classes without a `static schema` (most of the existing test classes) are unaffected, since `validateSchema` no-ops for them
+- Unit tests (`validation.test.ts`): `add()`/`update()`/`save()` reject invalid values, a Model without `static schema` is never validated, and `find()`/`reload()`/association loading (`include`) all throw on a row that drifted out of schema directly in the DB
+  - Simulated the drift using SQLite's loose column-type affinity: a raw UPDATE via `context.raw` sets a wrong-typed value (a string into a numeric column) that doesn't violate `NOT NULL` but fails zod validation at hydration time

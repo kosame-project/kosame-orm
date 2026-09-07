@@ -3,6 +3,7 @@ import type { Table } from "drizzle-orm";
 import { INTERNAL, type InternalBrand } from "./internal.js";
 import { DB, getPrimaryKey, deleteByPrimaryKey, selectByPrimaryKey, updateByPrimaryKey } from "../query/index.js";
 import type { PrimaryKey } from "../query/index.js";
+import { validateSchema } from "../validation/index.js";
 
 export interface ModelContext {
   readonly [DB]: unknown;
@@ -72,8 +73,7 @@ export abstract class Model {
       }
     }
     await this.beforeUpdate(changes);
-    await updateByPrimaryKey(this.#context[DB], table, primaryKey, this.#primaryKeyValue(primaryKey), changes);
-    Object.assign(this, changes);
+    await this.writeUpdate(changes);
   }
 
   async update(changes: Record<string, unknown>): Promise<void> {
@@ -82,6 +82,7 @@ export abstract class Model {
   }
 
   protected async writeUpdate(changes: Record<string, unknown>): Promise<void> {
+    validateSchema(this.constructor, changes, { partial: true });
     const primaryKey = this.#requirePrimaryKey("update");
     await updateByPrimaryKey(
       this.#context[DB],
@@ -110,6 +111,7 @@ export abstract class Model {
     if (!row) {
       throw new Error("kosame: reload() could not find this row anymore.");
     }
+    validateSchema(this.constructor, row);
     Object.assign(this, row);
   }
 }

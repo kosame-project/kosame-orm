@@ -26,3 +26,9 @@
 
 - `loadRelation`が、リレーションのターゲットModelクラスに`SoftDeletable`が適用されている場合、`hasMany`/`belongsTo`どちらの経路でも`selectWhereIn`にソフトデリート除外条件（`isNull(deletedAtColumn)`）を渡すように変更（`src/context`の`find()`と同じ判定方法）
 - リレーション側には`find()`の`withDeleted`に相当するオプトアウト手段は用意していない（`include`自体に個別リレーションへのオプション渡し口がないため）。既知の制限として明記
+
+## Phase 8. バリデーション統合向けの追加
+
+### Changed
+
+- `load.ts`内部の`hydrate()`ヘルパーに`validateSchema(modelClass, row)`（`src/validation`）を追加。`hasMany`/`belongsTo`どちらの経路でリレーション先の行を取得した場合も、`src/context`の`find()`/`add()`と同じhydrationパイプラインの検証が効くようにした
