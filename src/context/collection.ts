@@ -6,6 +6,7 @@ import { INTERNAL } from "../model/internal.js";
 import type { Model } from "../model/index.js";
 import { DB, getPrimaryKey, insertRow, selectByPrimaryKey } from "../query/index.js";
 import { getSoftDeleteColumn } from "../soft-delete/index.js";
+import { validateSchema } from "../validation/index.js";
 import type { Context } from "./context.js";
 import type { ModelClass } from "./types.js";
 
@@ -24,6 +25,7 @@ export class ModelCollection<T extends Model, TTable extends Table = Table> {
   }
 
   #hydrate(row: Record<string, unknown>): T {
+    validateSchema(this.#modelClass, row);
     const instance = new this.#modelClass({ brand: INTERNAL, context: this.#context });
     Object.assign(instance, row);
     return instance;
@@ -70,6 +72,7 @@ export class ModelCollection<T extends Model, TTable extends Table = Table> {
     await instance.beforeCreate();
 
     const currentValues = { ...(instance as unknown as Record<string, unknown>) };
+    validateSchema(this.#modelClass, currentValues);
     const row = await insertRow(this.#context[DB], this.#modelClass.table, currentValues);
     Object.assign(instance, row);
 
