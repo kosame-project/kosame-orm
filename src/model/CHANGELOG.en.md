@@ -64,3 +64,13 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Added `validateSchema(this.constructor, changes, { partial: true })` to `writeUpdate(changes)`, called after `beforeUpdate(changes)` and before the actual UPDATE runs — so it validates whatever the hook ended up producing
   - Added `validateSchema(this.constructor, row)` (full schema, no `partial`) to `reload()`, before the re-selected row is assigned onto the instance
   - `validateSchema` no-ops for any Model class without a `static schema`, so existing Model classes are completely unaffected
+
+## Recommended pattern (note)
+
+Instead of declaring each column property by hand (`declare id: number`, etc.), write `interface User extends InferSelectModel<typeof usersTable> {}` right above `class User extends Model { static table = usersTable; }` — TypeScript merges a same-named `interface` and `class` automatically.
+
+- Some type annotation is unavoidable given TS's rules, since column values are assigned dynamically at runtime via `Object.assign` (not through the constructor) — but there's no need to copy out every column by hand; injecting the whole `InferSelectModel<typeof table>` does it in one line
+- `Model` itself stays non-generic (doesn't revisit the Phase 5 decision), and still uses neither `Proxy` nor codegen (per the existing decisions) — this pattern removes the field duplication while satisfying every one of those constraints as-is
+- Relation properties (`declare posts?: Post[]`, not actual table columns) aren't part of this merge and still need to be added individually to the `interface` (e.g. `interface User extends InferSelectModel<...> { posts?: Post[] }`)
+- No code changes needed in `src/model` itself (`Model`, `ModelClass`, `ModelConstructorArgs`, etc.) — `declare` fields are erased at compile time either way, so this is purely a difference in how the type information is written, not in runtime behavior
+- See the README's ("Defining a Model" / "Modelの定義") section for the full example

@@ -64,3 +64,13 @@
   - `writeUpdate(changes)`に`validateSchema(this.constructor, changes, { partial: true })`を追加。`beforeUpdate(changes)`の後、実際のUPDATE実行前に呼ばれる（フックによる書き換え後の最終的な値を検証する）
   - `reload()`に`validateSchema(this.constructor, row)`（`partial`なしの完全なスキーマ）を追加。再SELECTした行をインスタンスに反映する前に検証する
   - `static schema`が定義されていないModelクラスでは`validateSchema`が何もしないため、既存の（`static schema`を持たない）Modelクラスの挙動は一切変わらない
+
+## 推奨の書き方（メモ）
+
+Modelのカラムプロパティ（`declare id: number`等）を1つずつ書く代わりに、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）を使い、`interface User extends InferSelectModel<typeof usersTable> {}`を`class User extends Model { static table = usersTable; }`の直前に書く形を推奨する。
+
+- カラムの値は実行時に`Object.assign`で動的に代入される（コンストラクタでは受け取らない）ため、そもそも何らかの型注釈が必要になるのはTypeScriptの制約上避けられない。ただしカラムを1個ずつ書き写す必要はなく、`InferSelectModel<typeof table>`をまるごと注入すれば済む
+- `Model`自体は非ジェネリックのまま（Phase 5の決定を変更しない）、Proxyもcodegenも使わない（既存の決定事項通り）。この宣言マージパターンは、既存の制約をすべて満たしたままフィールド重複だけを解消できる
+- リレーションのプロパティ（`declare posts?: Post[]`のような、テーブルのカラムではないもの）はこのマージの対象外なので、引き続き`interface`側に個別に追加する（`interface User extends InferSelectModel<...> { posts?: Post[] }`のように）
+- `Model`・`ModelClass`・`ModelConstructorArgs`等、`src/model`自体のコード変更は不要（`declare`フィールドは型情報として消えるだけなので、書き方を変えてもランタイムの挙動は同一）
+- 詳細はREADME（`README.ja.md`/`README.md`）の「Modelの定義」節参照
