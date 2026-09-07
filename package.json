@@ -30,7 +30,10 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test --path-ignore-patterns 'src/test-integration/**'",
+    "test:integration:up": "docker compose -f docker-compose.test.yml up -d --wait",
+    "test:integration:down": "docker compose -f docker-compose.test.yml down -v",
+    "test:integration": "bun test src/test-integration"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
