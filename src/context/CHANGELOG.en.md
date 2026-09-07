@@ -102,3 +102,15 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
 - Added `withDeleted?: boolean` to `FindOptions` — pass `true` to include soft-deleted rows too
 - A Model class without `SoftDeletable` applied is completely unaffected, since `getSoftDeleteColumn` returns `undefined` for it
 - Unit tests (`soft-delete.test.ts`): `find()`'s default exclusion and its `withDeleted: true` override, no effect on a non-`SoftDeletable` Model, and `hasMany`/`belongsTo` (via `src/associations`) excluding soft-deleted rows
+
+## Phase 7. Escape hatch
+
+### Added
+
+- Made `Context`/`createContext` generic over the db type too (`Context<TSchema>` → `Context<TDb, TSchema>`). `db` used to be erased to `unknown`; now the caller's actual drizzle db type is preserved
+- Added a public `raw` getter to `Context`, simply returning the value already stored under `[DB]` (the non-exported Symbol key). Since the db type now flows through generically, `context.raw.select()...` works with drizzle's own API directly, no `any` cast needed
+- `transaction()`'s txContext was already built from the `tx` handle, so `txContext.raw` automatically points at that transaction's `tx` (per the "トランザクション整合性" decision) — no extra wiring required
+- Query results obtained via `context.raw` are never hydrated into Model instances; they stay as drizzle's plain result (per the "戻り値" decision). This falls out naturally since nothing goes through `ModelCollection`
+- Unit tests (`raw.test.ts`): `context.raw` is the exact same `db` instance passed to `createContext`, query results through it are plain rows rather than Model instances, and `txContext.raw` is actually usable inside `transaction()` (including type-checking without an `any` cast)
+
+**SQLite note**: as found in Phase 4, `better-sqlite3`/`bun:sqlite` are single-connection, so `txContext.raw` and `context.raw` end up being the same object (there's no real separate `tx` handle for them). PostgreSQL/MySQL genuinely use a separate connection/session.
