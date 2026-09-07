@@ -54,3 +54,7 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Unit tests (`mixin.test.ts`): the brand guard still throws through a two-layer mixin chain, and members added by each mixin land on the final prototype
   - `Constructor` is now also exported from `src/index.ts` (for Phase 6's `SoftDeletable` and for users writing their own mixins)
   - The actual mixins (`SoftDeletable`, etc.) are Phase 6's job (see the "Phase2・Phase6との接続点" decision)
+
+- **Phase 6. Soft delete**
+  - Split `update(changes)`'s internals into a `beforeUpdate(changes)` call plus a new `protected writeUpdate(changes)` (the actual UPDATE + `Object.assign`). The `SoftDeletable` mixin (`src/soft-delete`) needed to reuse the same low-level write path without firing `beforeUpdate` twice
+  - This is the only change to `Model` itself — the actual `SoftDeletable` mixin is covered in `src/soft-delete/CHANGELOG.en.md`

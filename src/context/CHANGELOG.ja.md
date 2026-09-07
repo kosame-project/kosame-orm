@@ -93,3 +93,12 @@
 
 - 単体テスト（`mixin.test.ts`）: `class Post extends WithGreeting(WithTag(Model)) {}`のような2段のmixin合成を、実際に`context.posts.add()`/`find()`/`update()`/`delete()`のパイプライン全体を通して検証。各mixinが追加したプロパティ・メソッドがインスタンスに乗ること、`beforeCreate()`のoverride（`super.beforeCreate()`呼び出し込み）が動くこと、`Model`本体のCRUDインスタンスメソッドが壊れないことを確認
 - 実装本体（`Constructor<T>`型）は`src/model/CHANGELOG.ja.md`参照。`src/context`側での追加コードはなし（既存の`Model`・`ModelCollection`がmixinを意識せず動くことの確認のみ）
+
+## Phase 6. ソフトデリート
+
+### Added
+
+- `ModelCollection.find(pkValue, options)`が、対象Modelクラスに`SoftDeletable`が適用されている場合（`getSoftDeleteColumn`が`Column`を返す場合）、デフォルトで`deletedAt IS NULL`を主キー条件にANDして除外するように変更
+- `FindOptions`に`withDeleted?: boolean`を追加。`true`を渡すとソフトデリート済みの行も対象に含める
+- `SoftDeletable`が適用されていないModelクラスは`getSoftDeleteColumn`が`undefined`を返すため、挙動は一切変わらない
+- 単体テスト（`soft-delete.test.ts`）: `find()`のデフォルト除外・`withDeleted: true`での取得、`SoftDeletable`未適用Modelへの無影響、`hasMany`/`belongsTo`（`src/associations`経由）でのソフトデリート済み行の除外を確認

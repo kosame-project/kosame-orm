@@ -93,3 +93,12 @@ Change history for the `src/context` directory. Follows the [Keep a Changelog](h
 
 - Unit tests (`mixin.test.ts`): a two-layer mixin chain (`class Post extends WithGreeting(WithTag(Model)) {}`) exercised through the full pipeline — `context.posts.add()`/`find()`/`update()`/`delete()`. Verifies each mixin's added properties/methods land on the instance, a `beforeCreate()` override (calling `super.beforeCreate()`) works, and `Model`'s own CRUD instance methods keep working
 - The actual implementation (the `Constructor<T>` type) is covered in `src/model/CHANGELOG.en.md`; nothing changed on the `src/context` side itself — this just confirms the existing `Model`/`ModelCollection` code already works with mixins without modification
+
+## Phase 6. Soft delete
+
+### Added
+
+- `ModelCollection.find(pkValue, options)` now ANDs `deletedAt IS NULL` onto the primary-key condition by default whenever the target Model class has `SoftDeletable` applied (i.e. `getSoftDeleteColumn` returns a `Column`)
+- Added `withDeleted?: boolean` to `FindOptions` — pass `true` to include soft-deleted rows too
+- A Model class without `SoftDeletable` applied is completely unaffected, since `getSoftDeleteColumn` returns `undefined` for it
+- Unit tests (`soft-delete.test.ts`): `find()`'s default exclusion and its `withDeleted: true` override, no effect on a non-`SoftDeletable` Model, and `hasMany`/`belongsTo` (via `src/associations`) excluding soft-deleted rows

@@ -51,5 +51,10 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
 - **Phase 5. Inheritance / mixin mechanism** (see `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` for details)
   - Added the `Constructor<T>` type (`abstract new (...args) => T`). No custom mixin machinery was built — plain TypeScript/JS mixin functions already compose cleanly with `Model`'s brand `Symbol` and `#context` wiring, verified with tests
   - The actual mixins (`SoftDeletable`, etc.) are planned for Phase 6
+- **Phase 6. Soft delete** (see `src/soft-delete/CHANGELOG.en.md` / `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` / `src/associations/CHANGELOG.en.md` for details)
+  - New `src/soft-delete` directory. Implemented `deletedAtColumn()` per dialect, published as `kosame/pg` / `kosame/mysql` / `kosame/sqlite` subpath exports
+  - Implemented the `SoftDeletable(Model)` mixin. `delete()` becomes an UPDATE to `deletedAt` (soft delete); the new `hardDelete()` is the original real DELETE
+  - `context.<collection>.find()` and `hasMany`/`belongsTo` (association loading) now exclude soft-deleted rows by default, but only for Models with `SoftDeletable` applied (`find()` can include them via `{ withDeleted: true }`). Detection is by "was the mixin explicitly applied" (a non-exported Symbol marker), never by column naming
+  - `createdAtColumn()`/`updatedAtColumn()` (decided back in Phase 2) are still not implemented — explicitly out of scope for Phase 6
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

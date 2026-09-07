@@ -54,3 +54,7 @@
   - 単体テスト（`mixin.test.ts`）: 2段のmixin合成を通してもブランドガードが例外を投げること、各mixinが追加したメンバーが最終的なプロトタイプに乗ること
   - `src/index.ts`から`Constructor`型を追加エクスポート（Phase 6の`SoftDeletable`や、ユーザー自身が書くmixinのため）
   - 実際のmixin（`SoftDeletable`等）はPhase 6で実装する（決定事項「Phase2・Phase6との接続点」参照）
+
+- **Phase 6. ソフトデリート**
+  - `update(changes)`の内部を`beforeUpdate(changes)`呼び出し＋`protected writeUpdate(changes)`（実際のUPDATE＋`Object.assign`）に分割。`SoftDeletable`ミックスイン（`src/soft-delete`）が、`beforeUpdate`を二重発火させずに同じ低レベル書き込みパスを再利用するために必要だった
+  - `Model`本体への変更はこれのみ。実際の`SoftDeletable`ミックスインは`src/soft-delete/CHANGELOG.ja.md`参照
