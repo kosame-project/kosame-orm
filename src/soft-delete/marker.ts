@@ -7,7 +7,7 @@ export interface SoftDeletableClass {
   readonly [SOFT_DELETE_COLUMN]?: string;
 }
 
-export function getSoftDeleteColumn(modelClass: SoftDeletableClass, table: Table): Column | undefined {
-  const key = modelClass[SOFT_DELETE_COLUMN];
+export function getSoftDeleteColumn(modelClass: unknown, table: Table): Column | undefined {
+  const key = (modelClass as SoftDeletableClass)[SOFT_DELETE_COLUMN];
   return key === undefined ? undefined : getColumn(table, key);
 }
