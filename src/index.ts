@@ -4,3 +4,5 @@ export { createContext } from "./context/index.js";
 export type { Context, ContextSchema, ContextEntries, FindOptions } from "./context/index.js";
 export { hasMany, belongsTo } from "./associations/index.js";
 export type { HasManyDescriptor, BelongsToDescriptor, RelationDescriptor } from "./associations/index.js";
+export { SoftDeletable } from "./soft-delete/index.js";
+export type { SoftDeletableInstance } from "./soft-delete/index.js";
