@@ -58,3 +58,9 @@
 - **Phase 6. ソフトデリート**
   - `update(changes)`の内部を`beforeUpdate(changes)`呼び出し＋`protected writeUpdate(changes)`（実際のUPDATE＋`Object.assign`）に分割。`SoftDeletable`ミックスイン（`src/soft-delete`）が、`beforeUpdate`を二重発火させずに同じ低レベル書き込みパスを再利用するために必要だった
   - `Model`本体への変更はこれのみ。実際の`SoftDeletable`ミックスインは`src/soft-delete/CHANGELOG.ja.md`参照
+
+- **Phase 8. バリデーション統合**
+  - `save()`が独自にUPDATE＋`Object.assign`を行っていた実装を、`update()`と同じ`writeUpdate()`呼び出しに統一（Phase 6で`writeUpdate`を切り出した際に`save()`側だけ追従できていなかった差分を解消）。これにより検証ロジックを`writeUpdate()`1箇所に書くだけで`save()`/`update()`両方に効くようになった
+  - `writeUpdate(changes)`に`validateSchema(this.constructor, changes, { partial: true })`を追加。`beforeUpdate(changes)`の後、実際のUPDATE実行前に呼ばれる（フックによる書き換え後の最終的な値を検証する）
+  - `reload()`に`validateSchema(this.constructor, row)`（`partial`なしの完全なスキーマ）を追加。再SELECTした行をインスタンスに反映する前に検証する
+  - `static schema`が定義されていないModelクラスでは`validateSchema`が何もしないため、既存の（`static schema`を持たない）Modelクラスの挙動は一切変わらない

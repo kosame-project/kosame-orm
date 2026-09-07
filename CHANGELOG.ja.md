@@ -60,5 +60,10 @@
   - `context.raw`を実装。`createContext(db, schema)`に渡した`db`をそのまま公開する公開ゲッター。`Context`/`createContext`を`db`の型についてもジェネリックにしたことで、`any`キャストなしで元のdrizzle APIを直接使える
   - `transaction()`内の`txContext.raw`は自動的にそのトランザクションの`tx`ハンドルを指す（追加の配線不要、既存設計の帰結）
   - `context.raw`経由のクエリ結果はModelインスタンスへhydrateされない、drizzleのプレーンな結果のまま
+- **Phase 8. バリデーション統合**（詳細は `src/validation/CHANGELOG.ja.md` / `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` / `src/associations/CHANGELOG.ja.md` 参照）
+  - 新規ディレクトリ`src/validation`を作成。`validateSchema(modelClass, data, { partial? })`を実装（`zod`のみに依存する純粋なleafモジュール）
+  - Modelクラスの`static schema`（`drizzle-zod`の`createInsertSchema(table)`等、`static table`と同じパターンでユーザー自身が書く）を、書き込み時（`add()`は完全スキーマ、`update()`/`save()`は`.partial()`）とhydration時（`find()`/`reload()`/アソシエーション経由の取得）の両方で再利用して検証する
+  - `static schema`未定義のModelクラスは検証されない（完全にオプトイン）ため、既存の全テストへの影響はなし
+  - 実行環境で分岐するフラグは用意せず常時実行。失敗時は例外を投げてDB操作/hydrationを停止する
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

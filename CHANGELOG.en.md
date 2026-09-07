@@ -60,5 +60,10 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Implemented `context.raw`: a public getter exposing the exact `db` passed to `createContext(db, schema)`. `Context`/`createContext` are now generic over the db type too, so it works with drizzle's own API directly, no `any` cast needed
   - `txContext.raw` inside `transaction()` automatically points at that transaction's `tx` handle — no extra wiring, it just falls out of the existing design
   - Query results via `context.raw` are never hydrated into Model instances; they stay as drizzle's plain result
+- **Phase 8. Validation integration** (see `src/validation/CHANGELOG.en.md` / `src/model/CHANGELOG.en.md` / `src/context/CHANGELOG.en.md` / `src/associations/CHANGELOG.en.md` for details)
+  - New `src/validation` directory. Implemented `validateSchema(modelClass, data, { partial? })` (a pure leaf module depending only on `zod`)
+  - A Model class's `static schema` (`drizzle-zod`'s `createInsertSchema(table)`, etc. — written by the user, same pattern as `static table`) is reused for validation both on write (`add()` uses the full schema, `update()`/`save()` use `.partial()`) and at hydration time (`find()`/`reload()`/association loading)
+  - A Model class without `static schema` is never validated (fully opt-in), so all existing tests are unaffected
+  - No flag to toggle by environment — it always runs, and failure throws to stop the DB operation/hydration
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
