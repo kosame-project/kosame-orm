@@ -5,14 +5,14 @@ import type { ContextEntries, ContextSchema } from "./types.js";
 
 type TransactionCallback = () => void | Promise<void>;
 
-export class Context<TSchema extends ContextSchema = ContextSchema> implements ModelContext {
-  readonly [DB]: unknown;
+export class Context<TDb = unknown, TSchema extends ContextSchema = ContextSchema> implements ModelContext {
+  readonly [DB]: TDb;
   readonly #schema: TSchema;
   readonly #txDepth: number;
   readonly #afterCommitCallbacks: TransactionCallback[] = [];
   readonly #afterRollbackCallbacks: TransactionCallback[] = [];
 
-  constructor(db: unknown, schema: TSchema, txDepth = 0) {
+  constructor(db: TDb, schema: TSchema, txDepth = 0) {
     this[DB] = db;
     this.#schema = schema;
     this.#txDepth = txDepth;
@@ -25,6 +25,10 @@ export class Context<TSchema extends ContextSchema = ContextSchema> implements M
     }
   }
 
+  get raw(): TDb {
+    return this[DB];
+  }
+
   afterCommit(callback: TransactionCallback): void {
     this.#afterCommitCallbacks.push(callback);
   }
@@ -33,13 +37,16 @@ export class Context<TSchema extends ContextSchema = ContextSchema> implements M
     this.#afterRollbackCallbacks.push(callback);
   }
 
-  async transaction<R>(callback: (txContext: Context<TSchema> & ContextEntries<TSchema>) => Promise<R>): Promise<R> {
-    let txContext: (Context<TSchema> & ContextEntries<TSchema>) | undefined;
+  async transaction<R>(
+    callback: (txContext: Context<TDb, TSchema> & ContextEntries<TSchema>) => Promise<R>,
+  ): Promise<R> {
+    let txContext: (Context<TDb, TSchema> & ContextEntries<TSchema>) | undefined;
 
     let result: R;
     try {
       result = await runTransaction(this[DB], this.#txDepth, async (tx) => {
-        txContext = new Context(tx, this.#schema, this.#txDepth + 1) as Context<TSchema> & ContextEntries<TSchema>;
+        txContext = new Context(tx as TDb, this.#schema, this.#txDepth + 1) as Context<TDb, TSchema> &
+          ContextEntries<TSchema>;
         return callback(txContext);
       });
     } catch (error) {
@@ -60,9 +67,9 @@ async function runCallbacks(callbacks: readonly TransactionCallback[]): Promise<
   }
 }
 
-export function createContext<TSchema extends ContextSchema>(
-  db: unknown,
+export function createContext<TDb, TSchema extends ContextSchema>(
+  db: TDb,
   schema: TSchema,
-): Context<TSchema> & ContextEntries<TSchema> {
-  return new Context(db, schema) as Context<TSchema> & ContextEntries<TSchema>;
+): Context<TDb, TSchema> & ContextEntries<TSchema> {
+  return new Context(db, schema) as Context<TDb, TSchema> & ContextEntries<TSchema>;
 }
