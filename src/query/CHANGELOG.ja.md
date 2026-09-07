@@ -31,3 +31,9 @@
   - **発見した問題**: `better-sqlite3`/`bun:sqlite`（drizzleが`db.resultKind === "sync"`として区別する同期ドライバ）は、drizzleのネイティブな`db.transaction(async (tx) => {...})`ラッパーに非同期コールバックを渡すと正しく動かない。実際に検証したところ、`bun:sqlite`は`await`を挟んだ時点でコミット済みの状態になり例外を投げてもロールバックされず、`better-sqlite3`（Node.js経由で検証）に至っては`"Transaction function cannot return a promise"`という例外を投げて失敗する。一方MySQL（`mysql2`、実コンテナで検証）は非同期gapを挟んでも正しくロールバックされる。ネイティブラッパーが同期コールバックしか想定していないことが原因で、SQLite固有の問題
   - **対応方式**: `db.resultKind === "sync"`のときはdrizzleの`.transaction()`を使わず、同じ`db`ハンドルに対して生SQLの`BEGIN`/`COMMIT`/`ROLLBACK`（ネスト時は`SAVEPOINT`/`RELEASE SAVEPOINT`/`ROLLBACK TO SAVEPOINT`）を手動発行する。これにより、ユーザー向けのAPIは3dialect共通で`context.transaction(async (txContext) => {...})`のまま（SQLiteだけ別の呼び出し方を要求しない）で正しく動作する。dialect名ではなく`resultKind`というdrizzleが公開しているプロパティでの機械的な判定
   - 非同期ドライバ（`resultKind`が`"sync"`でない: PostgreSQL/MySQL/libsql/D1）はそのままdrizzleの`db.transaction()`に委譲する。ネストは`tx.transaction()`（drizzle自身がdialectごとにSAVEPOINT等で実装済み）に任せる
+
+## Phase 6. ソフトデリート向けの追加
+
+### Changed
+
+- `selectByPrimaryKey` / `selectWhereIn`（`crud.ts`）に、任意の追加条件`extra?: SQL`を渡せるように変更。渡された場合は`and(既存条件, extra)`で結合する。ソフトデリート済み行の除外条件（`isNull(deletedAtColumn)`）を、主キー/外部キーの条件に「足す」形で使うために必要だった。第2の専用クエリ関数を新設するのではなく、既存の2関数を拡張する形にした

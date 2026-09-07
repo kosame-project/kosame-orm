@@ -1,5 +1,5 @@
-import { eq, inArray } from "drizzle-orm";
-import type { Column, Table } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+import type { Column, SQL, Table } from "drizzle-orm";
 import { getPrimaryKey, type PrimaryKey } from "./primary-key.js";
 
 export async function insertRow(
@@ -46,8 +46,10 @@ export async function selectByPrimaryKey(
   table: Table,
   primaryKey: PrimaryKey,
   pkValue: unknown,
+  extra?: SQL,
 ): Promise<Record<string, unknown> | undefined> {
-  const rows = await db.select().from(table).where(eq(primaryKey.column, pkValue));
+  const condition = extra ? and(eq(primaryKey.column, pkValue), extra) : eq(primaryKey.column, pkValue);
+  const rows = await db.select().from(table).where(condition);
   return rows[0];
 }
 
@@ -75,9 +77,11 @@ export async function selectWhereIn(
   table: Table,
   column: Column,
   values: readonly unknown[],
+  extra?: SQL,
 ): Promise<Record<string, unknown>[]> {
   if (values.length === 0) {
     return [];
   }
-  return db.select().from(table).where(inArray(column, values));
+  const condition = extra ? and(inArray(column, values), extra) : inArray(column, values);
+  return db.select().from(table).where(condition);
 }

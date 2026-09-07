@@ -19,3 +19,10 @@
 - `src/index.ts`から`hasMany`/`belongsTo`（値）と`HasManyDescriptor`/`BelongsToDescriptor`/`RelationDescriptor`（型のみ）をエクスポート
 
 **既知の制限（決定事項通り）**: ネストは1段階まで（`include`に渡したrelationの、さらに先のrelationを同時にeager loadする機能はない）。複合主キー・複合外部キーは`src/query`の`getPrimaryKey`/`getColumn`の制約により未対応。
+
+## Phase 6. ソフトデリート向けの追加
+
+### Changed
+
+- `loadRelation`が、リレーションのターゲットModelクラスに`SoftDeletable`が適用されている場合、`hasMany`/`belongsTo`どちらの経路でも`selectWhereIn`にソフトデリート除外条件（`isNull(deletedAtColumn)`）を渡すように変更（`src/context`の`find()`と同じ判定方法）
+- リレーション側には`find()`の`withDeleted`に相当するオプトアウト手段は用意していない（`include`自体に個別リレーションへのオプション渡し口がないため）。既知の制限として明記

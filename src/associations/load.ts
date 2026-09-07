@@ -1,6 +1,8 @@
+import { isNull } from "drizzle-orm";
 import { INTERNAL } from "../model/internal.js";
 import type { Model, ModelClass, ModelContext } from "../model/index.js";
 import { DB, getColumn, getPrimaryKey, selectWhereIn } from "../query/index.js";
+import { getSoftDeleteColumn } from "../soft-delete/index.js";
 import type { RelationDescriptor } from "./types.js";
 
 function hydrate<T extends Model>(modelClass: ModelClass<T>, context: ModelContext, row: Record<string, unknown>): T {
@@ -32,6 +34,8 @@ export async function loadRelation(
   const targetClass = descriptor.target();
   const targetTable = targetClass.table;
   const db = context[DB];
+  const softDeleteColumn = getSoftDeleteColumn(targetClass, targetTable);
+  const excludeDeleted = softDeleteColumn ? isNull(softDeleteColumn) : undefined;
 
   if (descriptor.kind === "hasMany") {
     const localKeyName = descriptor.localKey ?? getPrimaryKey(parentTable)?.key;
@@ -41,7 +45,7 @@ export async function loadRelation(
 
     const foreignColumn = getColumn(targetTable, descriptor.foreignKey);
     const parentKeyValues = [...new Set(parents.map((parent) => get(parent, localKeyName)))];
-    const rows = await selectWhereIn(db, targetTable, foreignColumn, parentKeyValues);
+    const rows = await selectWhereIn(db, targetTable, foreignColumn, parentKeyValues, excludeDeleted);
 
     const grouped = new Map<unknown, Record<string, unknown>[]>();
     for (const row of rows) {
@@ -74,7 +78,7 @@ export async function loadRelation(
   const foreignKeyValues = [...new Set(parents.map((parent) => get(parent, descriptor.foreignKey)))].filter(
     (value) => value !== null && value !== undefined,
   );
-  const rows = await selectWhereIn(db, targetTable, targetColumn, foreignKeyValues);
+  const rows = await selectWhereIn(db, targetTable, targetColumn, foreignKeyValues, excludeDeleted);
 
   const byTargetKey = new Map<unknown, Record<string, unknown>>();
   for (const row of rows) {

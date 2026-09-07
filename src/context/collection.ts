@@ -1,14 +1,17 @@
+import { isNull } from "drizzle-orm";
 import type { InferInsertModel, Table } from "drizzle-orm";
 import { loadRelation } from "../associations/index.js";
 import type { RelationDescriptor } from "../associations/index.js";
 import { INTERNAL } from "../model/internal.js";
 import type { Model } from "../model/index.js";
 import { DB, getPrimaryKey, insertRow, selectByPrimaryKey } from "../query/index.js";
+import { getSoftDeleteColumn } from "../soft-delete/index.js";
 import type { Context } from "./context.js";
 import type { ModelClass } from "./types.js";
 
 export interface FindOptions {
   readonly include?: readonly string[];
+  readonly withDeleted?: boolean;
 }
 
 export class ModelCollection<T extends Model, TTable extends Table = Table> {
@@ -36,7 +39,11 @@ export class ModelCollection<T extends Model, TTable extends Table = Table> {
     if (!primaryKey) {
       throw new Error("kosame: find() requires the table to have a primary key.");
     }
-    const row = await selectByPrimaryKey(this.#context[DB], table, primaryKey, pkValue);
+
+    const softDeleteColumn = getSoftDeleteColumn(this.#modelClass, table);
+    const excludeDeleted = softDeleteColumn && !options?.withDeleted ? isNull(softDeleteColumn) : undefined;
+
+    const row = await selectByPrimaryKey(this.#context[DB], table, primaryKey, pkValue, excludeDeleted);
     if (!row) {
       return undefined;
     }

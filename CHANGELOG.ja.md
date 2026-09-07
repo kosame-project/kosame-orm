@@ -51,5 +51,10 @@
 - **Phase 5. 継承・Mixin機構**（詳細は `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` 参照）
   - `Constructor<T>`型（`abstract new (...args) => T`）を追加。独自のmixin機構は実装せず、素のTypeScript/JSのmixin関数パターンが`Model`のブランドSymbol・`#context`配線とそのまま噛み合うことをテストで確認
   - 実際のmixin（`SoftDeletable`等）はPhase 6で実装予定
+- **Phase 6. ソフトデリート**（詳細は `src/soft-delete/CHANGELOG.ja.md` / `src/model/CHANGELOG.ja.md` / `src/context/CHANGELOG.ja.md` / `src/associations/CHANGELOG.ja.md` 参照）
+  - 新規ディレクトリ`src/soft-delete`を作成。`deletedAtColumn()`をdialectごとに実装し、`kosame/pg`・`kosame/mysql`・`kosame/sqlite`のsubpath exportsとして公開
+  - `SoftDeletable(Model)`ミックスインを実装。`delete()`は`deletedAt`へのUPDATE（ソフトデリート）に、新設の`hardDelete()`は従来通りの実DELETEになる
+  - `context.<collection>.find()`と`hasMany`/`belongsTo`（アソシエーション経由の取得）が、`SoftDeletable`適用Modelに限りソフトデリート済み行をデフォルトで自動除外する（`find()`は`{ withDeleted: true }`で含められる）。判定は「Mixinを明示適用したか」（非公開Symbolマーカー）であり、カラム名からの自動判定は行わない
+  - Phase 2で決定されていた`createdAtColumn()`/`updatedAtColumn()`は今回未実装のまま（Phase 6のスコープ外として明記）
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

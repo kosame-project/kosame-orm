@@ -19,3 +19,10 @@ Change history for the `src/associations` directory. Follows the [Keep a Changel
 - `src/index.ts` now exports `hasMany`/`belongsTo` (values) and `HasManyDescriptor`/`BelongsToDescriptor`/`RelationDescriptor` (types only)
 
 **Known limitations (as decided)**: nesting stops at one level (no eager-loading a relation-of-a-relation together in one `include`). Composite primary/foreign keys aren't supported, per the same constraint already on `src/query`'s `getPrimaryKey`/`getColumn`.
+
+## Phase 6. Additions for soft delete
+
+### Changed
+
+- `loadRelation` now passes a soft-delete exclusion condition (`isNull(deletedAtColumn)`) into `selectWhereIn` for both `hasMany` and `belongsTo`, whenever the relation's target Model class has `SoftDeletable` applied (same detection method as `find()` in `src/context`)
+- There's no opt-out for relations equivalent to `find()`'s `withDeleted` — `include` itself has no place to pass per-relation options. Documented as a known limitation
