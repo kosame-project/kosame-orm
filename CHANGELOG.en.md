@@ -65,5 +65,11 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - A Model class's `static schema` (`drizzle-zod`'s `createInsertSchema(table)`, etc. — written by the user, same pattern as `static table`) is reused for validation both on write (`add()` uses the full schema, `update()`/`save()` use `.partial()`) and at hydration time (`find()`/`reload()`/association loading)
   - A Model class without `static schema` is never validated (fully opt-in), so all existing tests are unaffected
   - No flag to toggle by environment — it always runs, and failure throws to stop the DB operation/hydration
+- **Phase 9. Test environment** (see `src/test-integration/CHANGELOG.en.md` / `src/test-types/CHANGELOG.en.md` for details)
+  - `docker-compose.test.yml` spins up disposable PostgreSQL/MySQL containers; added real-DB smoke tests per dialect (`src/test-integration`) covering CRUD, hooks, associations, soft delete, and transactions. Closes two previously "untested" gaps: MySQL's `$returningId()` path and async transaction rollback against a real (non-SQLite) driver
+    - Fully honoring the "run the whole test suite against real DBs" decision would mean parameterizing all 64 existing tests across three dialects — far too large a rewrite, so a main-path smoke-test scope was agreed with the user instead
+  - Added a GitHub Actions CI workflow (`.github/workflows/ci.yml`): triggers on `push` (all branches, no `pull_request`), runs typecheck, the regular test suite, and the real-DB smoke tests via PostgreSQL/MySQL service containers
+  - Added a type-level assertion mechanism (`Equal<A, B>`/`expectType<Expected>(actual)`, self-written, zero dependencies) in `src/test-types`, plus tests verifying `context.users`/`context.raw` and other inferred types resolve as expected
+  - This completes the Phase 1–9 implementation plan
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

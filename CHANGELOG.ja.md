@@ -65,5 +65,11 @@
   - Modelクラスの`static schema`（`drizzle-zod`の`createInsertSchema(table)`等、`static table`と同じパターンでユーザー自身が書く）を、書き込み時（`add()`は完全スキーマ、`update()`/`save()`は`.partial()`）とhydration時（`find()`/`reload()`/アソシエーション経由の取得）の両方で再利用して検証する
   - `static schema`未定義のModelクラスは検証されない（完全にオプトイン）ため、既存の全テストへの影響はなし
   - 実行環境で分岐するフラグは用意せず常時実行。失敗時は例外を投げてDB操作/hydrationを停止する
+- **Phase 9. テスト環境構築**（詳細は `src/test-integration/CHANGELOG.ja.md` / `src/test-types/CHANGELOG.ja.md` 参照）
+  - `docker-compose.test.yml`で使い捨てのPostgreSQL/MySQLコンテナを用意し、`src/test-integration`に各dialect実DB向けのスモークテスト（CRUD・hooks・アソシエーション・ソフトデリート・トランザクション）を追加。MySQLの`$returningId()`経路・実DBでの非同期トランザクションロールバックなど、これまで「未検証」としてきた項目を解消した
+    - 決定事項「テスト全体を実DBで実行する」を字義通り満たす（既存64テストの3dialectパラメータ化）には非常に大きな書き直しが必要なため、主要経路のスモークテストに絞る方針をユーザーと合意した
+  - GitHub Actions CI（`.github/workflows/ci.yml`）を追加。`push`トリガー（全ブランチ、`pull_request`は使わない）、PostgreSQL/MySQLのservice containersで`typecheck`・通常のテスト・実DBスモークテストを実行
+  - `src/test-types`に型レベルアサーションの仕組み（`Equal<A,B>`/`expectType<Expected>(actual)`、自作・ゼロ依存）を追加し、`context.users`や`context.raw`等の推論結果が期待通りであることを検証するテストを追加
+  - これでPhase 1〜9の実装計画が完了
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm
