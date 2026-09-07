@@ -56,5 +56,9 @@
   - `SoftDeletable(Model)`ミックスインを実装。`delete()`は`deletedAt`へのUPDATE（ソフトデリート）に、新設の`hardDelete()`は従来通りの実DELETEになる
   - `context.<collection>.find()`と`hasMany`/`belongsTo`（アソシエーション経由の取得）が、`SoftDeletable`適用Modelに限りソフトデリート済み行をデフォルトで自動除外する（`find()`は`{ withDeleted: true }`で含められる）。判定は「Mixinを明示適用したか」（非公開Symbolマーカー）であり、カラム名からの自動判定は行わない
   - Phase 2で決定されていた`createdAtColumn()`/`updatedAtColumn()`は今回未実装のまま（Phase 6のスコープ外として明記）
+- **Phase 7. エスケープハッチ**（詳細は `src/context/CHANGELOG.ja.md` 参照）
+  - `context.raw`を実装。`createContext(db, schema)`に渡した`db`をそのまま公開する公開ゲッター。`Context`/`createContext`を`db`の型についてもジェネリックにしたことで、`any`キャストなしで元のdrizzle APIを直接使える
+  - `transaction()`内の`txContext.raw`は自動的にそのトランザクションの`tx`ハンドルを指す（追加の配線不要、既存設計の帰結）
+  - `context.raw`経由のクエリ結果はModelインスタンスへhydrateされない、drizzleのプレーンな結果のまま
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

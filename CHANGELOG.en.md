@@ -56,5 +56,9 @@ Change history for this project. Follows the [Keep a Changelog](https://keepacha
   - Implemented the `SoftDeletable(Model)` mixin. `delete()` becomes an UPDATE to `deletedAt` (soft delete); the new `hardDelete()` is the original real DELETE
   - `context.<collection>.find()` and `hasMany`/`belongsTo` (association loading) now exclude soft-deleted rows by default, but only for Models with `SoftDeletable` applied (`find()` can include them via `{ withDeleted: true }`). Detection is by "was the mixin explicitly applied" (a non-exported Symbol marker), never by column naming
   - `createdAtColumn()`/`updatedAtColumn()` (decided back in Phase 2) are still not implemented — explicitly out of scope for Phase 6
+- **Phase 7. Escape hatch** (see `src/context/CHANGELOG.en.md` for details)
+  - Implemented `context.raw`: a public getter exposing the exact `db` passed to `createContext(db, schema)`. `Context`/`createContext` are now generic over the db type too, so it works with drizzle's own API directly, no `any` cast needed
+  - `txContext.raw` inside `transaction()` automatically points at that transaction's `tx` handle — no extra wiring, it just falls out of the existing design
+  - Query results via `context.raw` are never hydrated into Model instances; they stay as drizzle's plain result
 
 [Unreleased]: https://github.com/kosame-project/kosame-orm

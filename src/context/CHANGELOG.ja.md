@@ -102,3 +102,15 @@
 - `FindOptions`に`withDeleted?: boolean`を追加。`true`を渡すとソフトデリート済みの行も対象に含める
 - `SoftDeletable`が適用されていないModelクラスは`getSoftDeleteColumn`が`undefined`を返すため、挙動は一切変わらない
 - 単体テスト（`soft-delete.test.ts`）: `find()`のデフォルト除外・`withDeleted: true`での取得、`SoftDeletable`未適用Modelへの無影響、`hasMany`/`belongsTo`（`src/associations`経由）でのソフトデリート済み行の除外を確認
+
+## Phase 7. エスケープハッチ
+
+### Added
+
+- `Context`/`createContext`を`db`の型についてもジェネリックにした（`Context<TSchema>` → `Context<TDb, TSchema>`）。これまで`db: unknown`として型を消していたが、呼び出し元が渡した実際のdrizzle db型をそのまま保持するようにした
+- `Context`に公開ゲッター`raw`を追加。内部で保持している`[DB]`（非公開Symbolキー）の値をそのまま返すだけ。`db`の型がジェネリックで通っているため、`context.raw.select()...`のように`any`キャストなしでdrizzleの元のAPIをそのまま使える
+- `transaction()`のtxContextは元々`tx`ハンドルで構築されるため、`txContext.raw`は自動的にそのトランザクションの`tx`を指す（決定事項「トランザクション整合性」）。追加の配線は不要だった
+- `context.raw`経由のクエリ結果はModelインスタンスへhydrateされない、drizzleのプレーンな結果のまま（決定事項「戻り値」）。`ModelCollection`等を経由しないため、これは自然に満たされる
+- 単体テスト（`raw.test.ts`）: `context.raw`が`createContext`に渡した`db`インスタンスと同一であること、経由したクエリ結果がプレーンな行でModelインスタンスでないこと、`transaction()`内で`txContext.raw`が実際に使えること（`any`キャストなしで型が通ることも含めて）を確認
+
+**注意（SQLite）**: Phase 4で判明した通り、`better-sqlite3`/`bun:sqlite`は単一コネクションのため`txContext.raw`と`context.raw`が同一オブジェクトを指す（`tx`ハンドルという別概念が実質存在しない）。PostgreSQL/MySQLでは別コネクション/セッションになる。
