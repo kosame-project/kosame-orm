@@ -65,12 +65,16 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Added `validateSchema(this.constructor, row)` (full schema, no `partial`) to `reload()`, before the re-selected row is assigned onto the instance
   - `validateSchema` no-ops for any Model class without a `static schema`, so existing Model classes are completely unaffected
 
-## Recommended pattern (note)
+## How to write a Model's fields (note)
 
-Instead of declaring each column property by hand (`declare id: number`, etc.), write `interface User extends InferSelectModel<typeof usersTable> {}` right above `class User extends Model { static table = usersTable; }` — TypeScript merges a same-named `interface` and `class` automatically.
+Weighed declaring each column property by hand (`declare id: number`, etc.) against TypeScript's declaration merging (`interface User extends InferSelectModel<typeof usersTable> {}` — a same-named `interface` and `class` merge automatically) for the README's main example, and **kept the per-field `declare` style as the default**, demoting the merge trick to a "if the repetition bothers you" aside.
 
-- Some type annotation is unavoidable given TS's rules, since column values are assigned dynamically at runtime via `Object.assign` (not through the constructor) — but there's no need to copy out every column by hand; injecting the whole `InferSelectModel<typeof table>` does it in one line
-- `Model` itself stays non-generic (doesn't revisit the Phase 5 decision), and still uses neither `Proxy` nor codegen (per the existing decisions) — this pattern removes the field duplication while satisfying every one of those constraints as-is
-- Relation properties (`declare posts?: Post[]`, not actual table columns) aren't part of this merge and still need to be added individually to the `interface` (e.g. `interface User extends InferSelectModel<...> { posts?: Post[] }`)
-- No code changes needed in `src/model` itself (`Model`, `ModelClass`, `ModelConstructorArgs`, etc.) — `declare` fields are erased at compile time either way, so this is purely a difference in how the type information is written, not in runtime behavior
+- What prompted this: a review comment that the table definition and the Model class looked like the same columns written out twice
+- The merge does work — verified `Model` stays non-generic, still uses neither `Proxy` nor codegen — so it's not a technical dead end
+- Reasons for keeping `declare` as the primary form anyway:
+  - Declaration merging is a fairly minor TS feature; a first-time reader seeing `User` declared twice raises a question the example doesn't need to raise
+  - Once a relation is added, the type (`posts?: Post[]`) ends up in the `interface` while the actual config (`static relations`) stays in the `class` — understanding one property now means reading two places, which is arguably worse than the original duplication
+  - Declaration merging (zero runtime cost, but reads as "clever" to a newcomer) sits a bit uneasily next to the project's own "explicit over implicit magic" principle
+  - Other TS ORMs (Sequelize, for the same reason — giving TS a type for a dynamically-assigned property) use the same `declare` convention, so it's also the more familiar shape
+- No code changes needed in `src/model` itself either way (`Model`, `ModelClass`, `ModelConstructorArgs`, etc.) — `declare` fields are erased at compile time regardless of which style is used
 - See the README's ("Defining a Model" / "Modelの定義") section for the full example

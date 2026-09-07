@@ -45,22 +45,22 @@ export const db = drizzle(pool);
 ```ts
 import { Model } from "kosame";
 import { pgTable, serial, text } from "drizzle-orm/pg-core";
-import type { InferSelectModel } from "drizzle-orm";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
 });
 
-interface User extends InferSelectModel<typeof usersTable> {}
 export class User extends Model {
   static table = usersTable;
+  declare id: number;
+  declare name: string;
 }
 ```
 
-Modelは直接`new`できません。コンテキスト側のファクトリメソッド（`context.users.add()`/`find()`）経由でのみ生成されます。カラムの値は普通のインスタンスプロパティとして実行時に代入されます。
+Modelは直接`new`できません。コンテキスト側のファクトリメソッド（`context.users.add()`/`find()`）経由でのみ生成されます。カラムの値は普通のインスタンスプロパティとして実行時に代入されます（`declare`フィールドはTypeScriptに型を教えるだけで、コンパイル後は消えます。初期化もしません）。
 
-`interface User extends InferSelectModel<typeof usersTable> {}`は、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）を使い、`usersTable`から推論した型をそのまま`User`に注入しています。カラムを1つずつ`declare id: number`のように書き写す必要はありません（増やしたときもテーブル側を直すだけで型に反映されます）。リレーションのプロパティ（`declare posts?: Post[]`のような、テーブルのカラムではないもの）はこのマージの対象外なので、引き続きModel側に個別に書きます。
+カラムを1つずつ書くのが冗長に感じる場合は、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）を使い、`interface User extends InferSelectModel<typeof usersTable> {}`をclassの直前に1行書く手もあります。ただしパッと見て少し「凝った」書き方に見えるので、上記の`declare`スタイルの方が最初は読みやすいと思います。
 
 ## Contextの作成
 
@@ -93,22 +93,21 @@ await user.delete();
 
 ```ts
 import { hasMany, belongsTo } from "kosame";
-import type { InferSelectModel } from "drizzle-orm";
 
-interface User extends InferSelectModel<typeof usersTable> {
-  posts?: Post[]; // テーブルのカラムではないので手動で追加
-}
 class User extends Model {
   static table = usersTable;
   static relations = { posts: hasMany(() => Post, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare name: string;
+  declare posts?: Post[];
 }
 
-interface Post extends InferSelectModel<typeof postsTable> {
-  author?: User;
-}
 class Post extends Model {
   static table = postsTable;
   static relations = { author: belongsTo(() => User, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare authorId: number;
+  declare author?: User;
 }
 
 const user = await context.users.find(id, { include: ["posts"] });

@@ -45,22 +45,22 @@ export const db = drizzle(pool);
 ```ts
 import { Model } from "kosame";
 import { pgTable, serial, text } from "drizzle-orm/pg-core";
-import type { InferSelectModel } from "drizzle-orm";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
 });
 
-interface User extends InferSelectModel<typeof usersTable> {}
 export class User extends Model {
   static table = usersTable;
+  declare id: number;
+  declare name: string;
 }
 ```
 
-Models can't be constructed directly with `new` — only through a context factory method (`context.users.add()`/`find()`). Column values land as plain instance properties, assigned at runtime.
+Models can't be constructed directly with `new` — only through a context factory method (`context.users.add()`/`find()`). Column values land as plain instance properties, assigned at runtime — the `declare` fields just give TypeScript their types (they compile away; nothing to initialize).
 
-`interface User extends InferSelectModel<typeof usersTable> {}` uses TypeScript's declaration merging (a same-named `interface` and `class` merge automatically) to inject the type inferred from `usersTable` directly into `User`, instead of writing out `declare id: number` for every column by hand — add a column to the table and its type shows up on `User` for free. Relation properties (`declare posts?: Post[]`, not actual table columns) aren't part of this merge and still need to be declared individually.
+If repeating each column bothers you, TypeScript's declaration merging (a same-named `interface` and `class` merge automatically) lets you inject `InferSelectModel<typeof usersTable>` in one line instead: `interface User extends InferSelectModel<typeof usersTable> {}` right above the class. It's a bit more "clever" to read at a glance, though — the `declare` form above stays the more approachable default.
 
 ## Creating a context
 
@@ -93,22 +93,21 @@ await user.delete();
 
 ```ts
 import { hasMany, belongsTo } from "kosame";
-import type { InferSelectModel } from "drizzle-orm";
 
-interface User extends InferSelectModel<typeof usersTable> {
-  posts?: Post[]; // not a table column, so added by hand
-}
 class User extends Model {
   static table = usersTable;
   static relations = { posts: hasMany(() => Post, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare name: string;
+  declare posts?: Post[];
 }
 
-interface Post extends InferSelectModel<typeof postsTable> {
-  author?: User;
-}
 class Post extends Model {
   static table = postsTable;
   static relations = { author: belongsTo(() => User, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare authorId: number;
+  declare author?: User;
 }
 
 const user = await context.users.find(id, { include: ["posts"] });
