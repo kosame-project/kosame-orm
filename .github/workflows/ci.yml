@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kosame
+          POSTGRES_PASSWORD: kosame
+          POSTGRES_DB: kosame_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kosame -d kosame_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      mysql:
+        image: mysql:9
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_USER: kosame
+          MYSQL_PASSWORD: kosame
+          MYSQL_DATABASE: kosame_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -ukosame -pkosame"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      KOSAME_TEST_POSTGRES_URL: postgres://kosame:kosame@localhost:5432/kosame_test
+      KOSAME_TEST_MYSQL_URL: mysql://kosame:kosame@localhost:3306/kosame_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run typecheck
+
+      - run: bun run test
+
+      - run: bun run test:integration
