@@ -62,6 +62,8 @@ Modelは直接`new`できません。コンテキスト側のファクトリメ�
 
 カラムを1つずつ書くのが冗長に感じる場合は、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）を使い、`interface User extends InferSelectModel<typeof usersTable> {}`をclassの直前に1行書く手もあります。ただしパッと見て少し「凝った」書き方に見えるので、上記の`declare`スタイルの方が最初は読みやすいと思います。
 
+**`Model`という名前について**: `Model`はSequelizeなど他のORMでもよく使われる名前なので、他のライブラリ（例: Elysiaの`.model()`など）と同じファイルでimportすると紛らわしくなることがあります。気になる場合は`import { Model as KosameModel } from "kosame"`のようにエイリアスして使ってください（kosame側の名前をこのために変える予定はありません）。
+
 ## Contextの作成
 
 ```ts
