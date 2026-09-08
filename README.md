@@ -58,7 +58,9 @@ export class User extends Model {
 }
 ```
 
-Models can't be constructed directly with `new` — only through a context factory method (`context.users.add()`/`find()`). Column values are plain declared instance properties.
+Models can't be constructed directly with `new` — only through a context factory method (`context.users.add()`/`find()`). Column values land as plain instance properties, assigned at runtime — the `declare` fields just give TypeScript their types (they compile away; nothing to initialize).
+
+If repeating each column bothers you, TypeScript's declaration merging (a same-named `interface` and `class` merge automatically) lets you inject `InferSelectModel<typeof usersTable>` in one line instead: `interface User extends InferSelectModel<typeof usersTable> {}` right above the class. It's a bit more "clever" to read at a glance, though — the `declare` form above stays the more approachable default.
 
 ## Creating a context
 
@@ -95,11 +97,17 @@ import { hasMany, belongsTo } from "kosame";
 class User extends Model {
   static table = usersTable;
   static relations = { posts: hasMany(() => Post, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare name: string;
+  declare posts?: Post[];
 }
 
 class Post extends Model {
   static table = postsTable;
   static relations = { author: belongsTo(() => User, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare authorId: number;
+  declare author?: User;
 }
 
 const user = await context.users.find(id, { include: ["posts"] });

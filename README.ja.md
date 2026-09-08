@@ -58,7 +58,9 @@ export class User extends Model {
 }
 ```
 
-Modelは直接`new`できません。コンテキスト側のファクトリメソッド（`context.users.add()`/`find()`）経由でのみ生成されます。カラムの値は普通の`declare`されたインスタンスプロパティです。
+Modelは直接`new`できません。コンテキスト側のファクトリメソッド（`context.users.add()`/`find()`）経由でのみ生成されます。カラムの値は普通のインスタンスプロパティとして実行時に代入されます（`declare`フィールドはTypeScriptに型を教えるだけで、コンパイル後は消えます。初期化もしません）。
+
+カラムを1つずつ書くのが冗長に感じる場合は、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）を使い、`interface User extends InferSelectModel<typeof usersTable> {}`をclassの直前に1行書く手もあります。ただしパッと見て少し「凝った」書き方に見えるので、上記の`declare`スタイルの方が最初は読みやすいと思います。
 
 ## Contextの作成
 
@@ -95,11 +97,17 @@ import { hasMany, belongsTo } from "kosame";
 class User extends Model {
   static table = usersTable;
   static relations = { posts: hasMany(() => Post, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare name: string;
+  declare posts?: Post[];
 }
 
 class Post extends Model {
   static table = postsTable;
   static relations = { author: belongsTo(() => User, { foreignKey: "authorId" }) };
+  declare id: number;
+  declare authorId: number;
+  declare author?: User;
 }
 
 const user = await context.users.find(id, { include: ["posts"] });

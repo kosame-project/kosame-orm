@@ -64,3 +64,17 @@
   - `writeUpdate(changes)`に`validateSchema(this.constructor, changes, { partial: true })`を追加。`beforeUpdate(changes)`の後、実際のUPDATE実行前に呼ばれる（フックによる書き換え後の最終的な値を検証する）
   - `reload()`に`validateSchema(this.constructor, row)`（`partial`なしの完全なスキーマ）を追加。再SELECTした行をインスタンスに反映する前に検証する
   - `static schema`が定義されていないModelクラスでは`validateSchema`が何もしないため、既存の（`static schema`を持たない）Modelクラスの挙動は一切変わらない
+
+## Modelのフィールドの書き方（メモ）
+
+カラムプロパティ（`declare id: number`等）を1個ずつ書く方式と、TypeScriptの宣言マージ（同名の`interface`と`class`は自動的にマージされる）で`interface User extends InferSelectModel<typeof usersTable> {}`を1行書く方式の両方を検討し、**`declare`を1個ずつ書く方式をREADMEの基本形とする**ことにした（宣言マージは「反復が気になるなら」という補足に格下げ）。
+
+- 検討のきっかけ: テーブル定義とModelクラスでカラム名が二重に書かれているように見える、という指摘
+- 宣言マージ自体は動作する（`Model`は非ジェネリックのまま、Proxyもcodegenも使わずに済む）ことを実際に確認済み。技術的には成立する
+- ただし最終的に`declare`方式を採用した理由:
+  - 宣言マージはマイナーなTS機能で、初見のユーザーに「なぜ`User`が2回出てくるのか」という余計な疑問を生む
+  - リレーションを足すと、型（`posts?: Post[]`）が`interface`側、実際の設定（`static relations`）が`class`側に分裂してしまい、1個のプロパティを理解するのに2箇所見る必要が出る。これは二重定義より読みにくい
+  - 「暗黙の魔法より明示的に書く」という全体方針とも、宣言マージ（実行時コストはゼロだが初見には魔法に見える）はやや相性が悪い
+  - Sequelize等、他のTS対応ORMも同じ理由（動的代入されるプロパティにTSの型を教える）で`declare`方式を採用しており、見慣れた書き方でもある
+- `Model`・`ModelClass`・`ModelConstructorArgs`等、`src/model`自体のコード変更はどちらの方式でも不要（`declare`フィールドは型情報として消えるだけで、書き方を変えてもランタイムの挙動は同一）
+- 詳細はREADME（`README.ja.md`/`README.md`）の「Modelの定義」節参照

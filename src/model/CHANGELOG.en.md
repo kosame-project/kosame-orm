@@ -64,3 +64,17 @@ Change history for the `src/model` directory. Follows the [Keep a Changelog](htt
   - Added `validateSchema(this.constructor, changes, { partial: true })` to `writeUpdate(changes)`, called after `beforeUpdate(changes)` and before the actual UPDATE runs — so it validates whatever the hook ended up producing
   - Added `validateSchema(this.constructor, row)` (full schema, no `partial`) to `reload()`, before the re-selected row is assigned onto the instance
   - `validateSchema` no-ops for any Model class without a `static schema`, so existing Model classes are completely unaffected
+
+## How to write a Model's fields (note)
+
+Weighed declaring each column property by hand (`declare id: number`, etc.) against TypeScript's declaration merging (`interface User extends InferSelectModel<typeof usersTable> {}` — a same-named `interface` and `class` merge automatically) for the README's main example, and **kept the per-field `declare` style as the default**, demoting the merge trick to a "if the repetition bothers you" aside.
+
+- What prompted this: a review comment that the table definition and the Model class looked like the same columns written out twice
+- The merge does work — verified `Model` stays non-generic, still uses neither `Proxy` nor codegen — so it's not a technical dead end
+- Reasons for keeping `declare` as the primary form anyway:
+  - Declaration merging is a fairly minor TS feature; a first-time reader seeing `User` declared twice raises a question the example doesn't need to raise
+  - Once a relation is added, the type (`posts?: Post[]`) ends up in the `interface` while the actual config (`static relations`) stays in the `class` — understanding one property now means reading two places, which is arguably worse than the original duplication
+  - Declaration merging (zero runtime cost, but reads as "clever" to a newcomer) sits a bit uneasily next to the project's own "explicit over implicit magic" principle
+  - Other TS ORMs (Sequelize, for the same reason — giving TS a type for a dynamically-assigned property) use the same `declare` convention, so it's also the more familiar shape
+- No code changes needed in `src/model` itself either way (`Model`, `ModelClass`, `ModelConstructorArgs`, etc.) — `declare` fields are erased at compile time regardless of which style is used
+- See the README's ("Defining a Model" / "Modelの定義") section for the full example
