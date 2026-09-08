@@ -1,9 +1,9 @@
 {
   "name": "kosame",
   "version": "0.0.1",
-  "private": true,
   "type": "module",
   "description": "A Drizzle-based ORM with a model-driven approach.",
+  "license": "Apache-2.0",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
