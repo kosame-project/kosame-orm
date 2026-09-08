@@ -62,6 +62,8 @@ Models can't be constructed directly with `new` — only through a context facto
 
 If repeating each column bothers you, TypeScript's declaration merging (a same-named `interface` and `class` merge automatically) lets you inject `InferSelectModel<typeof usersTable>` in one line instead: `interface User extends InferSelectModel<typeof usersTable> {}` right above the class. It's a bit more "clever" to read at a glance, though — the `declare` form above stays the more approachable default.
 
+**A note on the name `Model`**: other libraries use the same name (e.g. Sequelize's own `Model`, or Elysia's `.model()`), so importing it alongside one of those in the same file can get confusing. If that happens, alias it: `import { Model as KosameModel } from "kosame"` (there's no plan to rename it on kosame's side just to avoid this).
+
 ## Creating a context
 
 ```ts
