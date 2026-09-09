@@ -37,9 +37,13 @@
 
 ## インストール
 
+### bun
 ```bash
 bun add kosame
-# または: npm install kosame
+```
+### npm
+```bash
+npm install kosame
 ```
 
 加えて、使うDBに応じたドライバ（`pg` / `mysql2` / `better-sqlite3` / `@libsql/client`のいずれか。いずれもoptionalなpeerDependencies）が必要です。
