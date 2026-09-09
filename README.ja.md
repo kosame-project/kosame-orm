@@ -1,5 +1,5 @@
 <div align="center">
-<img width="428" height="140" alt="Frame 1 (1)" src="https://github.com/user-attachments/assets/ca80133c-804d-4591-9b9b-2fe8a52e16f8" />
+<img width="428" height="140" alt="kosameLogo" src="https://github.com/user-attachments/assets/ca80133c-804d-4591-9b9b-2fe8a52e16f8" />
 <svg width="214" height="70" viewBox="0 0 214 70" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="214" height="70" rx="12" fill="white"/>
 <path d="M65.5641 23.7541C67.1723 27.6365 68 31.7977 68 36L4 36C4 31.7977 4.8277 27.6366 6.43585 23.7541C8.044 19.8717 10.4011 16.3441 13.3726 13.3726C16.3441 10.4011 19.8717 8.04401 23.7541 6.43586C27.6365 4.8277 31.7977 4 36 4C40.2023 4 44.3634 4.8277 48.2459 6.43585C52.1283 8.04401 55.6559 10.4011 58.6274 13.3726C61.5989 16.3441 63.956 19.8717 65.5641 23.7541Z" fill="#1E1E1E"/>
