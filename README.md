@@ -39,12 +39,9 @@ A Drizzle-based ORM with a model-driven approach.
 
 ## Install
 
-Not published to npm yet — for now, clone and install locally:
-
 ```bash
-git clone git@github.com:kosame-project/kosame-orm.git
-cd kosame-orm
-bun install
+bun add kosame
+# or: npm install kosame
 ```
 
 You'll also need the driver for your database — one of `pg`, `mysql2`, `better-sqlite3`, `@libsql/client` (all optional peer dependencies).
@@ -147,4 +144,4 @@ Each relation is resolved with one batched `IN (...)` query (no JOINs), and nest
 - **Validation** — `static schema = createInsertSchema(usersTable)` (via `drizzle-zod`), checked on write and on every read.
 - **Escape hatch** — `context.raw` is the underlying drizzle `db`/`tx`, for anything the Model API can't express.
 
-Full API docs will get their own pages once this goes OSS. For now, the most detailed record per feature lives in each directory's `src/*/CHANGELOG.en.md` / `CHANGELOG.ja.md`.
+Full API docs are planned — this README will grow, or split into dedicated pages, as that happens.
