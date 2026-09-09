@@ -39,9 +39,13 @@ A Drizzle-based ORM with a model-driven approach.
 
 ## Install
 
+### bun
 ```bash
 bun add kosame
-# or: npm install kosame
+```
+### npm
+```bash
+npm install kosame
 ```
 
 You'll also need the driver for your database — one of `pg`, `mysql2`, `better-sqlite3`, `@libsql/client` (all optional peer dependencies).
