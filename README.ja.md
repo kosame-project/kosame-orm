@@ -1,11 +1,10 @@
 <div align="center">
-<img width="214" height="70" alt="kosame" src="https://raw.githubusercontent.com/kosame-project/kosame-orm/main/src/logo/kosameMojiLogo.png" />
+<img width="214" height="70" alt="kosame" src="./src/logo/kosameMojiLogo.png" />
 </div>
 
 <div align="center">
   <h3>Drizzleをベースにした、Model駆動のORM。</h3>
 </div>
-
 
 [English README](./README.md)
 
@@ -24,10 +23,13 @@
 ## インストール
 
 ### bun
+
 ```bash
 bun add kosame
 ```
+
 ### npm
+
 ```bash
 npm install kosame
 ```
@@ -112,7 +114,9 @@ class User extends Model {
 
 class Post extends Model {
   static table = postsTable;
-  static relations = { author: belongsTo(() => User, { foreignKey: "authorId" }) };
+  static relations = {
+    author: belongsTo(() => User, { foreignKey: "authorId" }),
+  };
   declare id: number;
   declare authorId: number;
   declare author?: User;
