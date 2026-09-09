@@ -1,5 +1,5 @@
 <div align="center">
-<img width="214" height="70" alt="kosame" src="./src/logo/kosameMojiLogo.png" />
+<img width="214" height="70" alt="kosame" src="https://raw.githubusercontent.com/kosame-project/kosame-orm/main/src/logo/kosameMojiLogo.png" />
 </div>
 
 <div align="center">
