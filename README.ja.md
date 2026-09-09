@@ -37,12 +37,9 @@
 
 ## インストール
 
-まだnpmには公開していません。今のところはclonしてローカルで使ってください。
-
 ```bash
-git clone git@github.com:kosame-project/kosame-orm.git
-cd kosame-orm
-bun install
+bun add kosame
+# または: npm install kosame
 ```
 
 加えて、使うDBに応じたドライバ（`pg` / `mysql2` / `better-sqlite3` / `@libsql/client`のいずれか。いずれもoptionalなpeerDependencies）が必要です。
@@ -145,4 +142,4 @@ user.posts; // Post[]
 - **バリデーション** — `static schema = createInsertSchema(usersTable)`（`drizzle-zod`経由）。書き込み時・読み込み時の両方で検証されます
 - **エスケープハッチ** — `context.raw`でdrizzleの生の`db`/`tx`にアクセスできます。Model APIで表現しきれない処理に使ってください
 
-詳しいAPIリファレンスは、OSS化のタイミングで別途ページとして整備する予定です。現時点で一番詳しい記録は、各機能ディレクトリの`src/*/CHANGELOG.ja.md` / `CHANGELOG.en.md`です。
+詳しいAPIリファレンスは今後整備予定です。整い次第このREADMEを拡充するか、別途ページに分ける予定です。
