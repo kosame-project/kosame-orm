@@ -1,6 +1,6 @@
 {
   "name": "kosame",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "A Drizzle-based ORM with a model-driven approach.",
   "license": "Apache-2.0",
