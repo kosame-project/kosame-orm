@@ -17,9 +17,11 @@
 
 </div>
 
-# kosame
-
+<div align="center">
+<h3>
 A Drizzle-based ORM with a model-driven approach.
+</h3>
+</div>
 
 [日本語版はこちら](./README.ja.md)
 
